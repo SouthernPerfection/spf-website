@@ -254,8 +254,11 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--spark); out
 }
 
 /* ============================================================
-   Mega menu (CSS-only: hover/focus on desktop, disclosure on mobile)
+   Mega menu (robust: always-visible on desktop, checkbox toggle on mobile)
    ============================================================ */
+.nav { display: flex; align-items: center; }
+.nav-cb { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.nav-burger { display: none; }
 .mega { display: flex; gap: 1.4rem; align-items: center; list-style: none; margin: 0; padding: 0; }
 .mega-item { position: relative; }
 .mega-top { display: inline-block; color: #fff; font-weight: 600; font-size: .95rem; padding: .5rem 0; cursor: pointer; text-decoration: none; }
@@ -271,18 +274,17 @@ a.mega-top:hover, .mega-item:hover > .mega-top, .mega-item:focus-within > .mega-
 .mega-panel a:hover { color: #fff; background: #23262d; text-decoration: none; }
 
 @media (max-width: 860px) {
-  .nav-disclosure summary {
-    display: inline-block; list-style: none; cursor: pointer; color: #fff;
+  .nav-burger {
+    display: inline-block; cursor: pointer; color: #fff;
     font-family: var(--font-mono); font-size: .8rem; letter-spacing: 1px; text-transform: uppercase;
     padding: .4rem .7rem; border: 1px solid #3a3f47; border-radius: var(--radius);
   }
-  .nav-disclosure summary::-webkit-details-marker { display: none; }
   .mega { display: none; }
-  .nav-disclosure[open] .mega {
+  .nav-cb:checked ~ .mega {
     display: block; position: absolute; left: 0; right: 0; top: 66px; background: var(--ink);
-    border-bottom: 1px solid #2a2d33; padding: .5rem 1.25rem 1.25rem; max-height: 80vh; overflow-y: auto;
+    border-bottom: 1px solid #2a2d33; padding: .5rem 1.25rem 1.25rem; max-height: 80vh; overflow-y: auto; z-index: 60;
   }
-  .nav-disclosure[open] .mega-item { border-top: 1px solid #2a2d33; padding: .4rem 0; }
+  .nav-cb:checked ~ .mega .mega-item { border-top: 1px solid #2a2d33; padding: .4rem 0; }
   .mega-top { display: block; color: #fff; padding: .5rem 0; }
   .mega-panel { position: static; display: block; border: none; box-shadow: none; background: transparent; padding: .1rem 0 .3rem .9rem; min-width: 0; }
   .mega-panel a { color: #cfd2d8; padding: .4rem 0; white-space: normal; }
