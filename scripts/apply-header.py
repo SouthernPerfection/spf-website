@@ -50,7 +50,7 @@ CANON_HEADER = '''<header class="site-header">
     </div>
   </header>'''
 
-header_re = re.compile(r'<header class="site-header">.*?</header>', re.DOTALL)
+header_re = re.compile(r'<header class="site-header"[^>]*>.*?</header>', re.DOTALL)
 style_re  = re.compile(r'<!-- CSS inlined.*?-->\s*', re.DOTALL)
 style_block_re = re.compile(r'<style>.*?</style>', re.DOTALL)
 
