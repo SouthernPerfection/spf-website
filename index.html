@@ -32,8 +32,85 @@
   <!-- PRODUCTION NOTE: self-host these fonts (see README) for best Core Web Vitals + privacy. -->
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="assets/styles.css">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <!-- CSS inlined for preview reliability. Production (Astro): move back to /assets/styles.css and preload. -->
+  <style>
+  :root{--ink:#16181C;--spark:#DD4E14;--navy:#1F3864;--paper:#F3F1EC;--line:#D8D4CA;--steel:#6F7782;--white:#fff;--font-head:"Bebas Neue","Arial Narrow",sans-serif;--font-body:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;--font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;--maxw:1160px;--gap:clamp(1rem,3vw,2.5rem);--radius:3px}
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{margin:0;font-family:var(--font-body);color:var(--ink);background:var(--white);line-height:1.55;font-size:1.0625rem}
+  img{max-width:100%;height:auto;display:block}
+  a{color:var(--navy);text-decoration:none}a:hover{text-decoration:underline}
+  .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:clamp(1rem,4vw,2rem)}
+  .skip-link{position:absolute;left:-999px;top:0;z-index:100;background:var(--ink);color:#fff;padding:.6rem 1rem}.skip-link:focus{left:1rem;top:1rem}
+  h1,h2,h3{font-family:var(--font-head);font-weight:400;letter-spacing:.5px;line-height:.98;margin:0 0 .5em}
+  h1{font-size:clamp(2.6rem,6vw,4.4rem)}h2{font-size:clamp(2rem,4.5vw,3rem)}h3{font-size:1.35rem;letter-spacing:.3px}
+  p{margin:0 0 1rem}strong{font-weight:700}
+  .eyebrow,.kicker{font-family:var(--font-mono);font-size:.74rem;letter-spacing:2px;text-transform:uppercase;color:var(--spark);font-weight:500;margin:0 0 .75rem}
+  .kicker-light{color:var(--spark)}.u-spark{color:var(--spark)}.h-light{color:#fff}
+  .lede{font-size:clamp(1.05rem,2vw,1.3rem);color:#333;max-width:42ch}.lede-light{color:#d7d9de}.center{text-align:center}
+  .btn{display:inline-block;font-family:var(--font-body);font-weight:600;padding:.7rem 1.3rem;border-radius:var(--radius);border:2px solid transparent;cursor:pointer;transition:transform .08s ease,background .15s ease;text-decoration:none;font-size:.98rem}
+  .btn:hover{text-decoration:none;transform:translateY(-1px)}.btn-lg{padding:.95rem 1.7rem;font-size:1.05rem}.btn-block{width:100%}
+  .btn-spark{background:var(--spark);color:#fff}.btn-spark:hover{background:#c4430f}
+  .btn-ghost{background:transparent;color:var(--ink);border-color:var(--line)}.btn-ghost:hover{border-color:var(--ink)}
+  .site-header{position:sticky;top:0;z-index:50;background:var(--ink);border-bottom:1px solid #2a2d33}
+  .header-inner{display:flex;align-items:center;gap:1rem;min-height:66px}
+  .brand{display:flex;align-items:center;gap:.55rem}.brand-mark{width:20px;height:20px;background:var(--spark);display:inline-block;border-radius:2px}
+  .brand-text{font-family:var(--font-mono);font-weight:500;letter-spacing:1.5px;font-size:.82rem;color:#fff}
+  .nav{margin-left:auto}.nav-list{list-style:none;display:flex;gap:1.4rem;margin:0;padding:0}
+  .nav-list a{color:#fff;font-weight:600;font-size:.95rem}.nav-list a:hover{color:var(--spark);text-decoration:none}
+  .nav-disclosure summary{display:none}.header-cta{display:flex;align-items:center;gap:1rem}
+  .phone{font-family:var(--font-mono);font-weight:500;color:#cfd2d8;font-size:.9rem}
+  .hero{padding:clamp(2.5rem,7vw,5rem) 0;background:var(--ink);background-image:radial-gradient(120% 120% at 85% 0%,#23262d 0%,var(--ink) 55%);color:#fff}
+  .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:var(--gap);align-items:center}
+  .hero .eyebrow{color:var(--spark)}.hero-copy h1{margin-top:.25rem;color:#fff;font-size:clamp(2.9rem,6.5vw,5rem)}
+  .hero .lede{color:#d7d9de;max-width:46ch}
+  .hero-actions{display:flex;flex-wrap:wrap;gap:.8rem;margin:1.5rem 0 .8rem}
+  .hero-note{font-size:.9rem;color:#9aa0a8}
+  .hero-media{background:#1e2126;border:1.5px dashed #3a3f47;border-radius:var(--radius);min-height:320px;display:grid;place-items:center}
+  .hero-media .media-placeholder{color:#7d838c}
+  .media-placeholder{font-family:var(--font-mono);font-size:.8rem;color:var(--steel);letter-spacing:1px;text-align:center;padding:1rem}
+  .hero .btn-ghost{color:#fff;border-color:#3a3f47}.hero .btn-ghost:hover{border-color:#fff}
+  .proofbar{background:var(--ink);color:#fff;border-top:1px solid #2a2d33}
+  .proofbar-inner{display:flex;flex-wrap:wrap;gap:1rem 2rem;justify-content:center;padding:.9rem 0;font-family:var(--font-mono);font-size:.8rem;letter-spacing:1.3px;text-transform:uppercase;color:#cfd2d8}
+  .section{padding:clamp(2.75rem,7vw,5rem) 0}
+  .section-paper{background:var(--paper);border-block:1px solid var(--line)}.section-ink{background:var(--ink);color:#fff}.section h2{max-width:20ch}
+  .cards-4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:2rem}
+  .card{border:1px solid var(--line);border-radius:var(--radius);padding:1.3rem;background:#fff}
+  .card h3{color:var(--navy);font-family:var(--font-head);margin-bottom:.35rem}.card p{margin:0;font-size:.96rem;color:#333}
+  .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:2rem}
+  .tile{display:block;border:1px solid var(--line);border-radius:var(--radius);padding:1.4rem;background:#fff;transition:border-color .15s,transform .08s}
+  .tile:hover{border-color:var(--spark);transform:translateY(-2px);text-decoration:none}
+  .tile h3{color:var(--ink);margin-bottom:.35rem}.tile p{color:var(--steel);font-size:.92rem;margin:0 0 .8rem}
+  .tile-go{font-family:var(--font-mono);font-size:.78rem;color:var(--spark);letter-spacing:1px}
+  .steps{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;padding:0;margin:2rem 0}
+  .steps li{border-top:3px solid var(--spark);padding-top:1rem}
+  .step-n{font-family:var(--font-head);font-size:2.4rem;color:var(--navy);line-height:1;display:block}
+  .steps h3{margin:.3rem 0}.steps p{color:#333;font-size:.96rem;margin:0}
+  .mp-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:var(--gap);align-items:center}
+  .mp-list{list-style:none;padding:0;margin:0;display:grid;gap:.6rem}
+  .mp-list li{border-left:3px solid var(--spark);padding:.5rem .9rem;background:rgba(255,255,255,.05);color:#e7e9ee;font-size:.98rem}
+  .rfq-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);align-items:start}
+  .rfq-checklist{padding-left:1.1rem;margin:1rem 0}.rfq-checklist li{margin:.3rem 0;font-size:.96rem}
+  .rfq-alt{font-family:var(--font-mono);font-size:.85rem;color:var(--steel)}
+  .rfq-form{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:1.6rem}
+  .field{margin-bottom:1rem}.field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.35rem}.opt{font-weight:400;color:var(--steel);font-size:.82rem}
+  input,select,textarea{width:100%;padding:.65rem .7rem;border:1px solid var(--line);border-radius:var(--radius);font:inherit;font-size:.95rem;background:#fff;color:var(--ink)}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--spark);outline-offset:1px;border-color:var(--spark)}
+  .form-fineprint{font-size:.8rem;color:var(--steel);margin:.8rem 0 0}
+  .cta-band{background:var(--navy);color:#fff;padding:clamp(2.5rem,6vw,4rem) 0}.cta-band .lede-light{margin-inline:auto;margin-bottom:1.4rem}
+  .site-footer{background:var(--ink);color:#cfd2d8;padding:2.5rem 0 1.5rem}
+  .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:2rem}.site-footer .brand-text{color:#fff}
+  .footer-mono{font-family:var(--font-mono);font-size:.78rem;letter-spacing:.5px;color:var(--steel);margin:.5rem 0 0}
+  .site-footer nav ul{list-style:none;padding:0;margin:0;display:grid;gap:.45rem}
+  .site-footer a{color:#cfd2d8;font-size:.92rem}.site-footer a:hover{color:#fff}
+  .footer-contact .phone{color:#fff;font-size:1rem}
+  .footer-legal{border-top:1px solid #2a2d33;margin-top:2rem;padding-top:1rem;color:var(--steel)}
+  @media(max-width:900px){.cards-4{grid-template-columns:repeat(2,1fr)}.tiles{grid-template-columns:repeat(2,1fr)}.hero-grid,.mp-grid,.rfq-grid{grid-template-columns:1fr}.hero-media{min-height:220px;order:-1}.steps{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:620px){.cards-4,.tiles{grid-template-columns:1fr}.field-row{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr}.nav{position:static}.nav-disclosure summary{display:inline-block;list-style:none;cursor:pointer;font-family:var(--font-mono);font-size:.8rem;letter-spacing:1px;text-transform:uppercase;color:#fff;padding:.4rem .6rem;border:1px solid #3a3f47;border-radius:var(--radius)}.nav-disclosure summary::-webkit-details-marker{display:none}.nav-disclosure[open] .nav-list{position:absolute;left:0;right:0;top:66px;background:var(--ink);border-bottom:1px solid #2a2d33;flex-direction:column;gap:0;padding:.5rem 1rem 1rem}.nav-disclosure[open] .nav-list li{padding:.5rem 0;border-top:1px solid #2a2d33}.header-cta .phone{display:none}}
+  @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+  </style>
 
   <!-- ============================ STRUCTURED DATA (schema.org) ============================ -->
   <script type="application/ld+json">
@@ -103,11 +180,11 @@
         <details class="nav-disclosure">
           <summary aria-label="Menu">Menu</summary>
           <ul class="nav-list">
-            <li><a href="/what-we-build/">What We Build</a></li>
-            <li><a href="/industries/">Industries</a></li>
-            <li><a href="/managed-programs/">Managed Programs</a></li>
+            <li><a href="/returnable-steel-racks/">Returnable Racks</a></li>
+            <li><a href="/rack-repair-refurbishment/">Repair</a></li>
+            <li><a href="/dunnage/">Dunnage</a></li>
             <li><a href="/capabilities/">Capabilities</a></li>
-            <li><a href="/about/">About</a></li>
+            <li><a href="/managed-programs/">Managed Programs</a></li>
           </ul>
         </details>
       </nav>
@@ -185,12 +262,12 @@
         <p class="kicker">Who we serve</p>
         <h2 id="ind-h">Racks for the plants you build in.</h2>
         <div class="tiles">
-          <a class="tile" href="/industries/automotive-oem/"><h3>Automotive OEM</h3><p>Body, powertrain, seating &amp; launch programs.</p><span class="tile-go">Explore →</span></a>
-          <a class="tile" href="/industries/automotive-tier-1/"><h3>Automotive Tier-1</h3><p>Line-side handling, transit-damage, WIP.</p><span class="tile-go">Explore →</span></a>
-          <a class="tile" href="/industries/heavy-equipment/"><h3>Heavy Equipment &amp; Ag</h3><p>Large, heavy parts — build-to-print steel.</p><span class="tile-go">Explore →</span></a>
-          <a class="tile" href="/industries/aerospace-defense/"><h3>Aerospace &amp; Defense</h3><p>Crating, tooling &amp; GSE — CAGE 2W654.</p><span class="tile-go">Explore →</span></a>
-          <a class="tile" href="/industries/ev-battery/"><h3>EV / Battery</h3><p>Module &amp; pack returnable packaging.</p><span class="tile-go">Explore →</span></a>
-          <a class="tile" href="/industries/general-industrial/"><h3>General Industrial</h3><p>Appliance, power, rail &amp; more.</p><span class="tile-go">Explore →</span></a>
+          <a class="tile" href="/industries/aerospace-defense/"><h3>Aerospace &amp; Defense</h3><p>Custom crating, military crates &amp; ruggedized containers — CAGE 2W654.</p><span class="tile-go">Explore →</span></a>
+          <a class="tile" href="/#rfq"><h3>Automotive OEM</h3><p>Body, powertrain, seating &amp; launch programs.</p><span class="tile-go">Start an RFQ →</span></a>
+          <a class="tile" href="/#rfq"><h3>Automotive Tier-1</h3><p>Line-side handling, transit-damage, WIP.</p><span class="tile-go">Start an RFQ →</span></a>
+          <a class="tile" href="/#rfq"><h3>Heavy Equipment &amp; Ag</h3><p>Large, heavy parts — build-to-print steel.</p><span class="tile-go">Start an RFQ →</span></a>
+          <a class="tile" href="/#rfq"><h3>EV / Battery</h3><p>Module &amp; pack returnable packaging.</p><span class="tile-go">Start an RFQ →</span></a>
+          <a class="tile" href="/#rfq"><h3>General Industrial</h3><p>Appliance, power, rail &amp; more.</p><span class="tile-go">Start an RFQ →</span></a>
         </div>
       </div>
     </section>
@@ -330,11 +407,11 @@
       </div>
       <nav aria-label="Footer">
         <ul>
-          <li><a href="/what-we-build/">What We Build</a></li>
-          <li><a href="/industries/">Industries</a></li>
-          <li><a href="/managed-programs/">Managed Programs</a></li>
+          <li><a href="/returnable-steel-racks/">Returnable Racks</a></li>
+          <li><a href="/rack-repair-refurbishment/">Repair &amp; Refurb</a></li>
+          <li><a href="/dunnage/">Dunnage</a></li>
           <li><a href="/capabilities/">Capabilities</a></li>
-          <li><a href="/about/">About</a></li>
+          <li><a href="/managed-programs/">Managed Programs</a></li>
           <li><a href="#rfq">Start an RFQ</a></li>
         </ul>
       </nav>
