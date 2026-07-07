@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Regenerate automatically at build time (Astro @astrojs/sitemap). Static version below for reference. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://southernperfection.com/</loc><priority>1.0</priority></url>
+  <url><loc>https://southernperfection.com/what-we-build/</loc><priority>0.8</priority></url>
+  <url><loc>https://southernperfection.com/capabilities/</loc><priority>0.8</priority></url>
+  <url><loc>https://southernperfection.com/managed-programs/</loc><priority>0.8</priority></url>
+  <url><loc>https://southernperfection.com/about/</loc><priority>0.6</priority></url>
+  <url><loc>https://southernperfection.com/contact/</loc><priority>0.6</priority></url>
+
+  <!-- Industry landing pages — primary SEO surface -->
+  <url><loc>https://southernperfection.com/industries/</loc><priority>0.7</priority></url>
+  <url><loc>https://southernperfection.com/industries/automotive-oem/</loc><priority>0.7</priority></url>
+  <url><loc>https://southernperfection.com/industries/automotive-tier-1/</loc><priority>0.7</priority></url>
+  <url><loc>https://southernperfection.com/industries/heavy-equipment/</loc><priority>0.7</priority></url>
+  <url><loc>https://southernperfection.com/industries/aerospace-defense/</loc><priority>0.7</priority></url>
+  <url><loc>https://southernperfection.com/industries/ev-battery/</loc><priority>0.7</priority></url>
+  <url><loc>https://southernperfection.com/industries/general-industrial/</loc><priority>0.7</priority></url>
+
+  <!-- Service pages -->
+  <url><loc>https://southernperfection.com/rack-repair-refurbishment/</loc><priority>0.7</priority></url>
+</urlset>
