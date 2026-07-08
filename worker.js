@@ -14,10 +14,60 @@
  *  Secrets live in the Cloudflare dashboard (Workers & Pages -> spf-website ->
  *  Settings -> Variables and Secrets), never in the repo.
  */
+// 301 map: legacy Weebly .html URLs -> new clean paths (preserves SEO equity on cutover).
+const REDIRECTS = {
+  "/index.html": "/",
+  "/services.html": "/capabilities/",
+  "/capabilities.html": "/capabilities/",
+  "/line-card.html": "/capabilities/",
+  "/heat-treatments.html": "/capabilities/",
+  "/product-overview.html": "/returnable-steel-racks/",
+  "/racks.html": "/returnable-steel-racks/",
+  "/category.html": "/returnable-steel-racks/",
+  "/automotive-racks.html": "/automotive-racks/",
+  "/automotive-racks1.html": "/automotive-racks/",
+  "/wip-racks.html": "/wip-carts/",
+  "/wip-racks1.html": "/wip-carts/",
+  "/rack-repair.html": "/rack-repair-refurbishment/",
+  "/bins--baskets.html": "/returnable-containers/",
+  "/bins--baskets1.html": "/returnable-containers/",
+  "/plant-safety.html": "/guards-platforms/",
+  "/glass-handling-equipment.html": "/industries/general-industrial/",
+  "/bakery.html": "/industries/food-beverage-dairy/",
+  "/defense.html": "/industries/aerospace-defense/",
+  "/about-the-company.html": "/about/",
+  "/warranty.html": "/about/",
+  "/careers.html": "/about/",
+  "/contact.html": "/contact/",
+  "/whats-new.html": "/blog/",
+  "/newsletter.html": "/blog/",
+  "/hand-sanitizer-stations.html": "/",
+  "/surplus-equipment-sale.html": "/",
+  "/store/p1/plant_safety.html": "/guards-platforms/",
+  "/store/c1/featured_products.html": "/returnable-steel-racks/",
+  "/store/c2/automotive.html": "/industries/automotive/",
+  "/store/c3/aerospace.html": "/industries/aerospace-defense/",
+  "/store/c4/defense": "/industries/aerospace-defense/",
+};
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === "/api/rfq") {
+    const path = url.pathname;
+
+    // Legacy-URL 301s (active once the domain cuts over to Cloudflare).
+    const dest = REDIRECTS[path.toLowerCase()];
+    if (dest) return Response.redirect(url.origin + dest, 301);
+    // Catch-all: any other old Weebly .html or /store/ path -> home, no 404s.
+    if (path.endsWith(".html") || path.startsWith("/store/")) {
+      return Response.redirect(url.origin + "/", 301);
+    }
+    // Normalize www -> apex (canonical is the bare domain).
+    if (url.hostname === "www.southernperfection.com") {
+      return Response.redirect("https://southernperfection.com" + path + url.search, 301);
+    }
+
+    if (path === "/api/rfq") {
       if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
       return handleRfq(request, env, url.searchParams.get("debug") === "1");
     }
