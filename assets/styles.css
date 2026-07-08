@@ -195,6 +195,12 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--spark); out
 .lm-checklist li { padding: .7rem 0 .7rem 2rem; border-bottom: 1px solid var(--line); position: relative; }
 .lm-checklist li::before { content: "✓"; position: absolute; left: 0; color: var(--spark); font-weight: 700; }
 @media (max-width: 760px) { .cs-grid { grid-template-columns: 1fr; } }
+.article-body { max-width: 720px; }
+.article-body h2 { font-size: 1.5rem; margin: 2rem 0 .6rem; }
+.article-body p, .article-body li { font-size: 1.02rem; line-height: 1.7; }
+.article-body ul { padding-left: 1.2rem; margin: .6rem 0 1rem; }
+.article-body li { margin: .35rem 0; }
+.article-meta { font-family: var(--font-mono); font-size: .8rem; color: var(--steel); letter-spacing: .5px; }
 
 /* ---------- CTA band ---------- */
 .cta-band { background: var(--navy); color: #fff; padding: clamp(2.5rem, 6vw, 4rem) 0; }
