@@ -70,16 +70,18 @@ strong { font-weight: 700; }
 
 /* ---------- Buttons ---------- */
 .btn {
-  display: inline-block; font-family: var(--font-body); font-weight: 600;
-  padding: .7rem 1.3rem; border-radius: var(--radius); border: 2px solid transparent;
-  cursor: pointer; transition: transform .08s ease, background .15s ease; text-decoration: none;
-  font-size: .98rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  font-family: var(--font-body); font-weight: 700; line-height: 1;
+  padding: .8rem 1.5rem; border-radius: 6px; border: 2px solid transparent;
+  cursor: pointer; transition: transform .1s ease, background .15s ease, box-shadow .15s ease;
+  text-decoration: none; font-size: .96rem; letter-spacing: .2px;
 }
 .btn:hover { text-decoration: none; transform: translateY(-1px); }
-.btn-lg { padding: .95rem 1.7rem; font-size: 1.05rem; }
+.btn:active { transform: translateY(0); }
+.btn-lg { padding: 1rem 1.9rem; font-size: 1.05rem; }
 .btn-block { width: 100%; }
-.btn-spark { background: var(--spark); color: #fff; }
-.btn-spark:hover { background: #c4430f; }
+.btn-spark { background: var(--spark); color: #fff; box-shadow: 0 3px 10px rgba(221,78,20,.32); }
+.btn-spark:hover { background: #c8440f; box-shadow: 0 5px 16px rgba(221,78,20,.42); }
 .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line); }
 .btn-ghost:hover { border-color: var(--ink); }
 
@@ -279,9 +281,14 @@ a.mega-top:hover, .mega-item:hover > .mega-top, .mega-item:focus-within > .mega-
 
 @media (max-width: 900px) {
   .nav-burger {
-    display: inline-block; cursor: pointer; color: #fff;
-    font-family: var(--font-mono); font-size: .8rem; letter-spacing: 1px; text-transform: uppercase;
-    padding: .45rem .8rem; border: 1px solid #3a3f47; border-radius: var(--radius);
+    display: inline-block; cursor: pointer; width: 30px; height: 20px; padding: 0; border: 0;
+    background-color: transparent; font-size: 0; color: transparent;
+    background-image: linear-gradient(#fff,#fff), linear-gradient(#fff,#fff), linear-gradient(#fff,#fff);
+    background-size: 28px 2.5px; background-repeat: no-repeat;
+    background-position: 0 0, 0 50%, 0 100%;
+  }
+  .nav-cb:checked ~ .nav-burger {
+    background-image: linear-gradient(var(--spark),var(--spark)), linear-gradient(var(--spark),var(--spark)), linear-gradient(var(--spark),var(--spark));
   }
   .mega { display: none; }
   .nav-cb:checked ~ .mega {
