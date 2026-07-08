@@ -77,6 +77,24 @@ CASES = [
    "How SPF delivered non-flight aerospace & defense tooling carts and GSE at 100% conformance under ISO 9001 and CAGE 2W654. Byron, GA."),
 ]
 
+# industry-tag label -> industry page
+IND_URL = {
+  "Automotive Tier-1":"/industries/automotive/", "Powertrain":"/industries/automotive/",
+  "Automotive":"/industries/automotive/", "Automotive OEM":"/industries/automotive/",
+  "EV / Battery":"/industries/ev-battery/", "Aerospace & Defense":"/industries/aerospace-defense/",
+  "Heavy Equipment":"/industries/heavy-equipment/", "Industrial Machinery":"/industries/industrial-machinery/",
+  "General Mfg":"/industries/general-industrial/",
+}
+# related product/capability links per case study
+RELATED = {
+  "engine-rack-program": [("Engine Racks","/engine-racks/"),("Automotive Racks","/automotive-racks/"),("Robotic Welding","/capabilities/robotic-welding/")],
+  "custom-rack-design": [("Design & Engineering","/capabilities/design-engineering/"),("Returnable Steel Racks","/returnable-steel-racks/")],
+  "rack-repair-fleet": [("Rack Repair & Refurb","/rack-repair-refurbishment/"),("Managed Programs","/managed-programs/")],
+  "high-volume-fleet": [("Robotic Welding","/capabilities/robotic-welding/"),("Automotive Racks","/automotive-racks/")],
+  "single-source-switch": [("All Capabilities","/capabilities/"),("Managed Programs","/managed-programs/")],
+  "tooling-gse": [("Quality & Inspection","/capabilities/quality-inspection/"),("Weldments & Frames","/weldments-frames/")],
+}
+
 TPL = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -117,6 +135,7 @@ TPL = """<!DOCTYPE html>
       </div>
       <div class="tags-row"><p class="kicker">Why SPF</p>__WHY__</div>
       <div class="tags-row"><p class="kicker">Industries</p>__INDS__</div>
+      <div class="tags-row"><p class="kicker">Related</p>__RELATED__</div>
     </div></section>
     <section class="cta-band"><div class="wrap center">
       <h2 class="h-light">Have a similar challenge?</h2><p class="lede lede-light">Send a part or a print — we'll come back with a concept and a number.</p>
@@ -143,12 +162,13 @@ for slug,cat,h1,sub,stats,challenge,did,result,why,inds,title,desc in CASES:
          "publisher":{"@type":"Organization","name":"Southern Perfection Fabrication","telephone":"+1-478-956-4442"}}]}
     stats_html = "".join(f'<div class="stat"><b>{s[0]}</b><span>{s[1]}</span></div>' for s in stats)
     why_html = "".join(f'<span class="tag">{w}</span>' for w in why)
-    inds_html = "".join(f'<span class="tag tag-ind">{i}</span>' for i in inds)
+    inds_html = "".join((f'<a class="tag tag-ind" href="{IND_URL[i]}">{i}</a>' if i in IND_URL else f'<span class="tag tag-ind">{i}</span>') for i in inds)
+    related_html = "".join(f'<a class="tag" href="{u}">{l}</a>' for l,u in RELATED.get(slug, []))
     html = (TPL.replace("__TITLE__",title).replace("__DESC__",desc).replace("__SLUG__",slug)
                .replace("__OG__",og).replace("__CAT__",cat).replace("__H1__",h1).replace("__SUB__",sub)
                .replace("__STATS__",stats_html).replace("__CHALLENGE__",challenge).replace("__DID__",did)
                .replace("__RESULT__",result).replace("__WHY__",why_html).replace("__INDS__",inds_html)
-               .replace("__SCHEMA__",json.dumps(schema, ensure_ascii=False)))
+               .replace("__RELATED__",related_html).replace("__SCHEMA__",json.dumps(schema, ensure_ascii=False)))
     d = ROOT / "case-studies" / slug
     d.mkdir(parents=True, exist_ok=True)
     (d/"index.html").write_text(html)
