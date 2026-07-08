@@ -316,9 +316,9 @@
           <p class="rfq-alt">Prefer email? <a href="mailto:sales@southernperfection.com">sales@southernperfection.com</a> · Call <a href="tel:+18002374726">(800) 237-4726</a> · <a href="tel:+14789564442">478-956-4442</a></p>
         </div>
 
-        <!-- PRODUCTION NOTE: replace this native form with the embedded HubSpot form
-             so the RFQ lands in HubSpot as your system of record (see README). -->
-        <form class="rfq-form" method="post" action="[HUBSPOT-FORM-ENDPOINT]" enctype="multipart/form-data" novalidate>
+        <!-- RFQ form submits to HubSpot Forms API (v3) via the script at the bottom of this file.
+             Until HS_PORTAL_ID / HS_FORM_GUID are set, it falls back to an email to sales@. -->
+        <form id="rfqForm" class="rfq-form" novalidate>
           <div class="field">
             <label for="name">Name</label>
             <input id="name" name="name" type="text" autocomplete="name" required>
@@ -359,7 +359,13 @@
           </div>
           <button type="submit" class="btn btn-spark btn-lg btn-block">Send my RFQ →</button>
           <p class="form-fineprint">We’ll reply with next steps — usually a concept and a number. Your info is used only to quote your project.</p>
+          <p class="form-status" id="rfqStatus" role="status" aria-live="polite"></p>
         </form>
+        <div id="rfqSuccess" class="rfq-success" hidden>
+          <h3>Thanks — we’ve got your RFQ.</h3>
+          <p>We’ll review it and come back with a concept and a number, usually within one business day.</p>
+          <p id="rfqFileNote" hidden><strong>One quick step:</strong> email your drawing to <a href="mailto:sales@southernperfection.com">sales@southernperfection.com</a> so we can match it to your request.</p>
+        </div>
       </div>
     </section>
 
@@ -415,5 +421,60 @@
     </div>
     <div class="wrap footer-legal"><small>© <span id="yr">2026</span> Southern Perfection Fabrication. All rights reserved.</small></div>
   </footer>
+
+  <!-- ============================ RFQ → HUBSPOT ============================
+       To go live: set HS_PORTAL_ID and HS_FORM_GUID below to your real values.
+       Until then, the form falls back to opening an email to sales@southernperfection.com. -->
+  <script>
+  (function(){
+    var HS_PORTAL_ID = "PORTAL_ID_HERE";
+    var HS_FORM_GUID = "FORM_GUID_HERE";
+    var form = document.getElementById('rfqForm');
+    if(!form) return;
+    var statusEl = document.getElementById('rfqStatus');
+    function val(id){ var el=document.getElementById(id); return el ? el.value.trim() : ''; }
+    function getCookie(n){ var m=document.cookie.match('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)'); return m ? m.pop() : ''; }
+    function fail(msg){ statusEl.textContent = msg; statusEl.className = 'form-status form-status-err'; }
+    function showSuccess(hadFile){
+      form.hidden = true;
+      var s = document.getElementById('rfqSuccess'); s.hidden = false;
+      if(hadFile){ document.getElementById('rfqFileNote').hidden = false; }
+      s.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      if(!form.checkValidity()){ form.reportValidity(); return; }
+      var name = val('name'); var parts = name.split(/\s+/);
+      var firstname = parts.shift() || ''; var lastname = parts.join(' ');
+      var role = val('role'); var details = val('details');
+      var message = details + (role ? (details ? '\n\n' : '') + 'Role: ' + role : '');
+      var hadFile = !!(document.getElementById('part') && document.getElementById('part').files.length);
+      var fields = [
+        {name:'firstname', value:firstname},
+        {name:'lastname',  value:lastname},
+        {name:'company',   value:val('company')},
+        {name:'email',     value:val('email')},
+        {name:'phone',     value:val('phone')},
+        {name:'message',   value:message}
+      ].filter(function(f){ return f.value; });
+      if(HS_PORTAL_ID === 'PORTAL_ID_HERE' || HS_FORM_GUID === 'FORM_GUID_HERE'){
+        var body = fields.map(function(f){ return f.name + ': ' + f.value; }).join('\r\n');
+        window.location.href = 'mailto:sales@southernperfection.com?subject=' +
+          encodeURIComponent('New RFQ from ' + (val('company') || name)) +
+          '&body=' + encodeURIComponent(body);
+        showSuccess(hadFile); return;
+      }
+      statusEl.textContent = 'Sending…'; statusEl.className = 'form-status';
+      var payload = { fields: fields, context: { pageUri: location.href, pageName: document.title } };
+      var hutk = getCookie('hubspotutk'); if(hutk){ payload.context.hutk = hutk; }
+      fetch('https://api.hsforms.com/submit/v3/integration/submit/' + HS_PORTAL_ID + '/' + HS_FORM_GUID, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+      }).then(function(r){
+        if(r.ok){ showSuccess(hadFile); }
+        else { fail('Something went wrong. Please email sales@southernperfection.com or call 478-956-4442.'); }
+      }).catch(function(){ fail('Network error. Please email sales@southernperfection.com or call 478-956-4442.'); });
+    });
+  })();
+  </script>
 </body>
 </html>
