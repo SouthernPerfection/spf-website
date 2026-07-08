@@ -10,3 +10,10 @@ dist/
 .DS_Store
 Thumbs.db
 *.log
+# Source photo archives (only optimized assets/photos/ is committed)
+Various SPF pictures/
+Eqt. Photographs/
+Product Photographs/
+Customer Supplied Images/
+_photos_extracted/
+*.zip
