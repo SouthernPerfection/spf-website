@@ -1,97 +1,108 @@
-# SPF Website — Build, Hosting & SEO Guide
+# SPF Website
 
-A revenue-first website for Southern Perfection Fabrication. **One job: surface a real rack need and open an RFQ** — mirroring the sales playbook. Everything here is engineered around that conversion event.
+Marketing site for **Southern Perfection Fabrication** (Byron, GA). One job: **surface a real rack/fabrication need and open an RFQ.** Everything is engineered around that conversion event.
 
-This folder is a **production-grade static homepage** you can open today (`index.html`) and a plan to grow it into the full site on the recommended stack.
+- **Live (staging):** https://spf-website.william-doxey.workers.dev
+- **Repo:** github.com/SouthernPerfection/spf-website (this `website/` folder only)
+- **Stack:** static HTML + one shared stylesheet (`/assets/styles.css`) + a small Cloudflare Worker (`worker.js`) for the RFQ endpoint. Portable to Astro later.
+- **~48 pages built:** homepage, product pages (racks, containers, pallets, carts, dollies, kanban flow racks, cable reels, weldments, guards, dunnage, foam, repair), 7 capability sub-pages, 13 industry pages, managed programs, about, contact, case studies.
 
 ---
 
-## 1. Recommended stack (best SEO from hosting to everything)
+## 1. Hosting & deploy
 
-| Layer | Recommendation | Why |
-|---|---|---|
-| **Framework** | **Astro** (static output) | Ships **zero JS by default** → top Core Web Vitals (LCP/CLS/INP), now a ranking factor. Purpose-built for content/marketing sites; per-page `<meta>` + JSON-LD is trivial. |
-| **Hosting/CDN** | **Cloudflare Pages** (or Vercel) | Free-tier global CDN, automatic HTTPS, instant cache, great TTFB. Git-push to deploy. |
-| **Forms / CRM** | **Embedded HubSpot form** for the RFQ | RFQ lands in HubSpot as your **system of record** (matches the playbook: HubSpot hunts, ERP quotes). Add the HubSpot tracking script for attribution. |
-| **DNS** | Cloudflare DNS | Free, fast, DNSSEC, easy `southernperfection.com` + `www` → apex redirect. |
-| **Analytics** | GA4 + Google Search Console + HubSpot | GSC is non-negotiable for SEO (indexing, queries, Core Web Vitals report). |
+Hosted on **Cloudflare Workers (Static Assets)**. Deploys are **automatic on git push**: Cloudflare's Workers Build runs `npx wrangler deploy`, which uploads the static files **and** the Worker.
 
-**Why not the alternatives:** WordPress → plugin bloat, security, perf tax. HubSpot CMS as host → heavier/slower Core Web Vitals and pricier, though defensible if you want marketers editing pages with no dev. For pure SEO/speed, **Astro + CDN wins**.
-
-### Porting this homepage to Astro
-The current `index.html` maps 1:1 to `src/pages/index.astro`. Move `<head>` into an `<SEO>` component, keep `styles.css` in `src/styles/`, and add:
 ```
-npm create astro@latest
-npx astro add sitemap        # auto-generates sitemap.xml at build
+git add -A && git commit -m "..." && git push origin main
+# → Cloudflare rebuilds in ~30–70s. New pages can lag a few seconds across CDN edges.
 ```
 
----
-
-## 2. Deploy in ~15 minutes (static, as-is)
-1. Push this `website/` folder to a GitHub repo.
-2. Cloudflare Pages → **Create project** → connect repo → Framework preset: **None** (or Astro once ported) → Deploy.
-3. Add custom domain `southernperfection.com`; Cloudflare auto-provisions HTTPS.
-4. Add the site to **Google Search Console**, submit `sitemap.xml`.
-5. Embed the HubSpot form (see §4) and paste the HubSpot tracking script before `</body>`.
-
----
-
-## 3. SEO checklist (already implemented ✓ / to finish ☐)
-- ✓ Semantic HTML5, single `<h1>`, logical heading order, landmarks, skip-link (a11y = SEO)
-- ✓ `<title>` + meta description tuned to real search intent
-- ✓ Canonical, robots meta, Open Graph + Twitter cards
-- ✓ **schema.org JSON-LD**: Organization/Manufacturer/LocalBusiness + WebSite + Service (rich results, local SEO)
-- ✓ `robots.txt` + `sitemap.xml`
-- ✓ Mobile-first responsive, zero-JS nav (`<details>`), `prefers-reduced-motion`
-- ✓ `font-display: swap`, preconnect/preload
-- ☐ **Self-host fonts** (Bebas Neue + IBM Plex Sans/Mono) in `/assets/fonts/` — better CWV + privacy than the Google Fonts CDN currently linked
-- ☐ **Real images** as WebP/AVIF, explicit `width`/`height` (prevents CLS), `loading="lazy"` below the fold, descriptive `alt`
-- ☐ Add `og-cover.jpg` (1200×630), `favicon.svg`, `logo.png`
-- ☐ Per-page unique title/description/canonical on every industry & service page
-- ☐ `FAQPage` JSON-LD on Capabilities + industry pages (RFQ questions = great rich-result fodder)
-
-### Target keywords (build a page per cluster)
-- returnable steel racks / custom steel shipping racks
-- material handling racks manufacturer / returnable packaging fabricator
-- rack repair & refurbishment / returnable fleet repair
-- returnable dunnage / WIP carts / stack racks
-- \+ industry modifiers: "automotive returnable racks", "EV battery returnable packaging", "defense crating CAGE", "heavy equipment shipping racks"
-- \+ geo modifiers: "Georgia / Southeast returnable racks"
-
----
-
-## 4. The RFQ form (your conversion event)
-Swap the native `<form>` in `index.html` for the **embedded HubSpot form** so submissions become HubSpot contacts/deals automatically. Keep the same fields (they mirror the RFQ checklist):
-part photo/print upload · size & weight · parts per rack · annual volume · ship lanes · returnable? · current pain · timing · contact.
-**North-star metric = RFQs started/submitted**, wired to the HubSpot dashboard alongside the sales scoreboard.
-
----
-
-## 5. Full site architecture (build order)
+`wrangler.jsonc` is the deploy config:
+```jsonc
+{
+  "name": "spf-website",
+  "compatibility_date": "2025-01-01",
+  "main": "worker.js",              // the Worker (handles /api/rfq, serves assets)
+  "assets": { "directory": "./", "binding": "ASSETS" }
+}
 ```
-/                         Homepage ...................... ✓ built (this file)
-/what-we-build/           Racks · dunnage · WIP · repair
-/industries/              Hub + 6 landing pages (SEO core)
-  automotive-oem/ · automotive-tier-1/ · heavy-equipment/
-  aerospace-defense/ · ev-battery/ · general-industrial/
-/rack-repair-refurbishment/   Service page (recurring-revenue hook)
-/managed-programs/        Customer-facing managed program (from existing one-pager)
-/capabilities/            Specs + ISO 9001/CAGE — procurement vetting + FAQPage
-/about/                   Since 1982, one roof, leadership
-/contact/                 Map, hours, RFQ
-/case-studies/            Engine Racks · Rack Design · Fleet Program ·
-                          Rack Repair · Single-Source Switch · Tooling & GSE
-```
-> Keep the **M&A roll-up / PE / acquisition strategy OFF the public site** — that's confidential. Managed Programs *is* public (real customer offering).
+`.assetsignore` keeps non-public files (`worker.js`, `scripts/`, `*.py`, `*.md`, config) out of what's served. Static pages are served directly; only unmatched routes (e.g. `/api/rfq`) hit the Worker.
+
+> Note: `wrangler` is **not** authed locally — all deploys run on Cloudflare's side via the GitHub connection. So runtime secrets are managed in the **Cloudflare dashboard**, not via `wrangler secret` here.
 
 ---
 
-## 6. Assets still needed (the §8 intake — highest-leverage before launch)
-Placeholders in the code marked `[ ... ]` need real content:
-- **Photos**: 6–10 rack shots (hero, industries, repair), shop-floor, logo, `og-cover.jpg`
-- **Specs**: max part size/weight · materials · thickness range · welding processes · finishing options · facility size/capacity
-- **Contact**: street address · sales email · RFQ portal link · LinkedIn URL
-- **Confirm**: certs beyond ISO 9001/CAGE (AS9100? IATF 16949? ITAR?) · quote turnaround to advertise · customer logos cleared to show
-- **Repair/refurb**: confirm scope to state publicly
+## 2. The RFQ pipeline → HubSpot  ⭐ (the conversion event)
 
-A page with real rack photos + a named customer converts far better than a polished one full of placeholders. **Gathering these is the #1 pre-launch task.**
+The homepage RFQ form (`#rfq` in `index.html`) is a **custom-designed form** that posts JSON to our own endpoint **`/api/rfq`**, handled by `worker.js`, which creates/updates a **HubSpot contact** via the CRM API.
+
+```
+Browser form  ──POST /api/rfq──►  worker.js  ──HubSpot CRM API──►  Contact created
+   (index.html <script>)          (uses env.HUBSPOT_TOKEN)          (HubSpot portal 246202279, na2)
+```
+
+**Field mapping** (done in the form's inline script + `worker.js`):
+- `Name` → auto-split into `firstname` + `lastname`
+- `Company` → `company`, `Work email` → `email`, `Phone` → `phone`
+- `Role` + `Tell us about the part` → combined into `message`
+- **File upload:** the CRM API can't accept a file, so on success the form asks the prospect to email the drawing to sales@ (the email fallback also carries all fields).
+
+**Graceful fallback:** if `/api/rfq` returns non-OK or the network fails, the form falls back to opening an email to **sales@southernperfection.com** — so it always works, even before the token is set.
+
+### The `HUBSPOT_TOKEN` secret — where it lives & how to set it
+`worker.js` reads `env.HUBSPOT_TOKEN`. It is **not in the repo** — it's an encrypted Cloudflare secret. To (re)set it:
+
+1. **HubSpot** → Settings ⚙ → Integrations → **Private Apps** → Create a private app ("Website RFQ").
+2. **Scopes:** `crm.objects.contacts.write` (+ `crm.objects.contacts.read`). Create → copy the **Access token** (`pat-na2-…`).
+3. **Cloudflare** → Workers & Pages → **spf-website** → Settings → **Variables and Secrets** → Add → Type **Secret**, Name **`HUBSPOT_TOKEN`**, Value = the token → Save. Picked up at runtime immediately.
+
+**To rotate:** delete the old token in HubSpot (Private App → deactivate/rotate), create a new one, update the `HUBSPOT_TOKEN` secret in Cloudflare. No code change needed.
+
+**Health check:** `curl -X POST https://<host>/api/rfq -H 'Content-Type: application/json' -d '{"email":"x@example.com"}'`
+- `503 {"error":"not_configured"}` → secret not set yet
+- `200 {"ok":true,"action":"created"}` → working
+
+> Aside: a HubSpot *form* (GUID `e5c7cd7b-…`) was created early on, but HubSpot's new-generation forms don't support the legacy submit API (they 404), so we use the Private-App/CRM-API route above instead. That form GUID is unused.
+
+---
+
+## 3. Maintenance scripts (`scripts/` — DRY templating)
+
+Pages share one header/mega-menu and are generated from data tables. **Edit the script, then re-run it — never hand-edit 48 files.**
+
+| Script | What it does |
+|---|---|
+| `apply-header.py` | Injects the canonical `<header>` (logo + mega menu) into **every** `*.html`. Edit the nav here, run once, it updates all pages. |
+| `generate-capabilities.py` | Regenerates the 7 `/capabilities/*` pages from a data list (real brochure specs). |
+| `generate-industries.py` | Generates the market industry pages under `/industries/*`. |
+| `generate-buildpages.py` | Generates the "What We Build" product pages (automotive-racks, stack-racks, carts, dollies, kanban, cable-reels). |
+| `generate-products.py` | Generates weldments-frames + guards-platforms. |
+| `add-faqs.py` | Adds FAQ sections + `FAQPage` JSON-LD to selected pages. |
+
+Typical flow: `python3 scripts/generate-*.py && python3 scripts/apply-header.py` then commit + push.
+
+---
+
+## 4. SEO (implemented)
+
+- Semantic HTML5, single `<h1>`, landmarks, skip-link, zero-JS checkbox nav
+- Per-page unique `<title>` / meta description / canonical, Open Graph + Twitter
+- **schema.org JSON-LD:** Organization/Manufacturer/LocalBusiness + WebSite + Service + BreadcrumbList + FAQPage
+- Real business facts site-wide: 232 Hwy 49 S, Byron GA 31008 · 478-956-4442 · toll-free (800) 237-4726 · sales@southernperfection.com · ISO 9001 · CAGE 2W654 · est. 1982
+
+**Keyword clusters (one page per cluster):** returnable steel racks · automotive/stack racks · steel pallets · industrial metal containers · industrial carts/dollies · kanban flow racks · steel cable reels · weldments & frames · guards & platforms · rack repair & refurbishment · dunnage/foam · + industry modifiers (automotive, EV/battery, aerospace-defense, heavy equipment, etc.).
+
+**Still to finish:** self-host fonts; real WebP/AVIF images with `width`/`height`; `og-cover.jpg`.
+
+---
+
+## 5. Pre-launch checklist
+
+- ☐ Set `HUBSPOT_TOKEN` in Cloudflare (see §2) → RFQs create contacts directly
+- ☐ **Real photos** — hero still shows `[INSERT HERO RACK PHOTO]`; add rack/shop shots + `og-cover.jpg`
+- ☐ Cleared customer logos (if any)
+- ☐ **Domain migration** to `southernperfection.com`: 301 redirect map + Semrush rankings baseline, then DNS cutover; submit sitemap to Google Search Console
+- ☐ **Rotate the GitHub PAT** that was exposed in chat during setup
+
+> Keep the M&A / PE / acquisition strategy **off** the public site — confidential. Managed Programs *is* public (real customer offering).
