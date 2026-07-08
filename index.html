@@ -423,23 +423,29 @@
   </footer>
 
   <!-- ============================ RFQ → HUBSPOT ============================
-       To go live: set HS_PORTAL_ID and HS_FORM_GUID below to your real values.
-       Until then, the form falls back to opening an email to sales@southernperfection.com. -->
+       Posts to our own /api/rfq Cloudflare function, which creates a HubSpot
+       contact using the encrypted HUBSPOT_TOKEN secret. If the function isn't
+       configured yet (or errors), it falls back to emailing sales@. -->
   <script>
   (function(){
-    var HS_PORTAL_ID = "PORTAL_ID_HERE";
-    var HS_FORM_GUID = "FORM_GUID_HERE";
     var form = document.getElementById('rfqForm');
     if(!form) return;
     var statusEl = document.getElementById('rfqStatus');
     function val(id){ var el=document.getElementById(id); return el ? el.value.trim() : ''; }
-    function getCookie(n){ var m=document.cookie.match('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)'); return m ? m.pop() : ''; }
-    function fail(msg){ statusEl.textContent = msg; statusEl.className = 'form-status form-status-err'; }
     function showSuccess(hadFile){
       form.hidden = true;
       var s = document.getElementById('rfqSuccess'); s.hidden = false;
       if(hadFile){ document.getElementById('rfqFileNote').hidden = false; }
       s.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+    function emailFallback(payload, name, hadFile){
+      var order = ['firstname','lastname','company','email','phone','message'];
+      var body = order.filter(function(k){ return payload[k]; })
+        .map(function(k){ return k + ': ' + payload[k]; }).join('\r\n');
+      window.location.href = 'mailto:sales@southernperfection.com?subject=' +
+        encodeURIComponent('New RFQ from ' + (payload.company || name)) +
+        '&body=' + encodeURIComponent(body);
+      showSuccess(hadFile);
     }
     form.addEventListener('submit', function(e){
       e.preventDefault();
@@ -449,30 +455,12 @@
       var role = val('role'); var details = val('details');
       var message = details + (role ? (details ? '\n\n' : '') + 'Role: ' + role : '');
       var hadFile = !!(document.getElementById('part') && document.getElementById('part').files.length);
-      var fields = [
-        {name:'firstname', value:firstname},
-        {name:'lastname',  value:lastname},
-        {name:'company',   value:val('company')},
-        {name:'email',     value:val('email')},
-        {name:'phone',     value:val('phone')},
-        {name:'message',   value:message}
-      ].filter(function(f){ return f.value; });
-      if(HS_PORTAL_ID === 'PORTAL_ID_HERE' || HS_FORM_GUID === 'FORM_GUID_HERE'){
-        var body = fields.map(function(f){ return f.name + ': ' + f.value; }).join('\r\n');
-        window.location.href = 'mailto:sales@southernperfection.com?subject=' +
-          encodeURIComponent('New RFQ from ' + (val('company') || name)) +
-          '&body=' + encodeURIComponent(body);
-        showSuccess(hadFile); return;
-      }
+      var payload = { firstname:firstname, lastname:lastname, company:val('company'),
+        email:val('email'), phone:val('phone'), message:message };
       statusEl.textContent = 'Sending…'; statusEl.className = 'form-status';
-      var payload = { fields: fields, context: { pageUri: location.href, pageName: document.title } };
-      var hutk = getCookie('hubspotutk'); if(hutk){ payload.context.hutk = hutk; }
-      fetch('https://api.hsforms.com/submit/v3/integration/submit/' + HS_PORTAL_ID + '/' + HS_FORM_GUID, {
-        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
-      }).then(function(r){
-        if(r.ok){ showSuccess(hadFile); }
-        else { fail('Something went wrong. Please email sales@southernperfection.com or call 478-956-4442.'); }
-      }).catch(function(){ fail('Network error. Please email sales@southernperfection.com or call 478-956-4442.'); });
+      fetch('/api/rfq', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+        .then(function(r){ if(r.ok){ showSuccess(hadFile); } else { emailFallback(payload, name, hadFile); } })
+        .catch(function(){ emailFallback(payload, name, hadFile); });
     });
   })();
   </script>

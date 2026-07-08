@@ -6,3 +6,7 @@ docs
 wrangler.jsonc
 .gitignore
 .assetsignore
+worker.js
+node_modules
+package.json
+package-lock.json
