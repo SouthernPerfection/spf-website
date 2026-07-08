@@ -1,19 +1,24 @@
 /**
  * SPF website Worker.
- * - POST /api/rfq  -> creates/updates a HubSpot contact using the private-app
- *   token stored in the encrypted secret env.HUBSPOT_TOKEN (never in the repo).
- * - Everything else -> served from static assets (env.ASSETS).
  *
- * If HUBSPOT_TOKEN is not set yet, /api/rfq returns 503 and the site's form
- * gracefully falls back to emailing sales@southernperfection.com.
+ *  POST /api/rfq  ->  on an RFQ submission:
+ *    1. create/update a HubSpot contact   (secret: HUBSPOT_TOKEN)
+ *    2. email the full details to sales@   (secret: RESEND_API_KEY)
+ *    3. email a confirmation to the prospect
+ *  Each step is best-effort. We report success if the lead reached the team
+ *  (HubSpot OR the internal email). If nothing lands, the site form falls
+ *  back to emailing sales@ directly.
+ *
+ *  Everything else -> served from static assets (env.ASSETS).
+ *
+ *  Secrets live in the Cloudflare dashboard (Workers & Pages -> spf-website ->
+ *  Settings -> Variables and Secrets), never in the repo.
  */
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === "/api/rfq") {
-      if (request.method !== "POST") {
-        return json({ ok: false, error: "method_not_allowed" }, 405);
-      }
+      if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
       return handleRfq(request, env);
     }
     return env.ASSETS.fetch(request);
@@ -21,11 +26,10 @@ export default {
 };
 
 const HS_BASE = "https://api.hubapi.com";
+const SALES_EMAIL = "sales@southernperfection.com";
+const FROM = "Southern Perfection Fabrication <sales@southernperfection.com>";
 
 async function handleRfq(request, env) {
-  if (!env.HUBSPOT_TOKEN) {
-    return json({ ok: false, error: "not_configured" }, 503);
-  }
   let data;
   try {
     data = await request.json();
@@ -38,7 +42,7 @@ async function handleRfq(request, env) {
     return json({ ok: false, error: "email_required" }, 400);
   }
 
-  const properties = {
+  const p = {
     email,
     firstname: str(data.firstname),
     lastname: str(data.lastname),
@@ -46,51 +50,123 @@ async function handleRfq(request, env) {
     phone: str(data.phone),
     message: str(data.message),
   };
-  // Drop empties so we never overwrite existing values with blanks.
-  Object.keys(properties).forEach((k) => {
-    if (k !== "email" && !properties[k]) delete properties[k];
-  });
 
+  const results = { hubspot: false, notify: false, confirm: false };
+
+  // 1. HubSpot contact
+  if (env.HUBSPOT_TOKEN) {
+    results.hubspot = await upsertHubspot(p, env).catch(() => false);
+  }
+
+  // 2 + 3. Emails via Resend
+  if (env.RESEND_API_KEY) {
+    results.notify = await sendEmail(env, {
+      to: SALES_EMAIL,
+      replyTo: email,
+      subject: `New RFQ — ${p.company || fullName(p) || email}`,
+      html: internalHtml(p),
+    }).catch(() => false);
+
+    results.confirm = await sendEmail(env, {
+      to: email,
+      replyTo: SALES_EMAIL,
+      subject: "We received your RFQ — Southern Perfection Fabrication",
+      html: clientHtml(p),
+    }).catch(() => false);
+  }
+
+  if (results.hubspot || results.notify) return json({ ok: true, results });
+  return json({ ok: false, error: "not_delivered", results }, 502);
+}
+
+// ---- HubSpot -------------------------------------------------------------
+async function upsertHubspot(p, env) {
   const headers = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${env.HUBSPOT_TOKEN}`,
   };
-
-  // Create the contact.
-  const create = await fetch(`${HS_BASE}/crm/v3/objects/contacts`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ properties }),
+  const properties = {};
+  Object.keys(p).forEach((k) => {
+    if (k === "email" || p[k]) properties[k] = p[k];
   });
+  const body = JSON.stringify({ properties });
 
-  if (create.ok) return json({ ok: true, action: "created" });
-
-  // Already exists -> update by email.
+  const create = await fetch(`${HS_BASE}/crm/v3/objects/contacts`, { method: "POST", headers, body });
+  if (create.ok) return true;
   if (create.status === 409) {
     const update = await fetch(
-      `${HS_BASE}/crm/v3/objects/contacts/${encodeURIComponent(email)}?idProperty=email`,
-      { method: "PATCH", headers, body: JSON.stringify({ properties }) }
+      `${HS_BASE}/crm/v3/objects/contacts/${encodeURIComponent(p.email)}?idProperty=email`,
+      { method: "PATCH", headers, body }
     );
-    if (update.ok) return json({ ok: true, action: "updated" });
-    return json({ ok: false, error: "update_failed", detail: await safeText(update) }, 502);
+    return update.ok;
   }
-
-  return json({ ok: false, error: "hubspot_error", status: create.status, detail: await safeText(create) }, 502);
+  return false;
 }
 
+// ---- Resend --------------------------------------------------------------
+async function sendEmail(env, { to, replyTo, subject, html }) {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+    },
+    body: JSON.stringify({ from: FROM, to: [to], reply_to: replyTo, subject, html }),
+  });
+  return res.ok;
+}
+
+function internalHtml(p) {
+  const rows = [
+    ["Name", fullName(p)],
+    ["Company", p.company],
+    ["Email", p.email],
+    ["Phone", p.phone],
+    ["Details", p.message],
+  ]
+    .filter((r) => r[1])
+    .map(
+      (r) =>
+        `<tr><td style="padding:8px 12px;font-weight:600;vertical-align:top;color:#16181C;border-bottom:1px solid #D8D4CA">${esc(
+          r[0]
+        )}</td><td style="padding:8px 12px;color:#16181C;border-bottom:1px solid #D8D4CA">${nl2br(esc(r[1]))}</td></tr>`
+    )
+    .join("");
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px">
+    <h2 style="color:#DD4E14;margin:0 0 2px">New RFQ</h2>
+    <p style="color:#6F7782;margin:0 0 16px;font-size:13px">Submitted via southernperfection.com</p>
+    <table style="border-collapse:collapse;width:100%;border:1px solid #D8D4CA">${rows}</table>
+    <p style="color:#6F7782;font-size:13px;margin-top:16px">Reply to this email to respond directly to the prospect.</p>
+  </div>`;
+}
+
+function clientHtml(p) {
+  const first = p.firstname || "there";
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;color:#16181C">
+    <h2 style="color:#DD4E14;margin:0 0 12px">Thanks — we've got your RFQ.</h2>
+    <p>Hi ${esc(first)},</p>
+    <p>Thanks for reaching out to Southern Perfection Fabrication. We've received your request and our team is reviewing it now. We'll get back to you shortly — usually within one business day — with next steps.</p>
+    <p><strong>Have a drawing or print?</strong> Just reply to this email and attach it, and we'll match it to your request.</p>
+    <p style="margin-top:20px">Talk soon,<br>The team at Southern Perfection Fabrication</p>
+    <hr style="border:none;border-top:1px solid #D8D4CA;margin:20px 0">
+    <p style="color:#6F7782;font-size:13px">Southern Perfection Fabrication · 232 Hwy 49 S, Byron, GA 31008<br>
+    478-956-4442 · toll-free (800) 237-4726 · sales@southernperfection.com</p>
+  </div>`;
+}
+
+// ---- helpers -------------------------------------------------------------
 function str(v) {
   return typeof v === "string" ? v.trim() : "";
 }
-async function safeText(res) {
-  try {
-    return (await res.text()).slice(0, 300);
-  } catch {
-    return "";
-  }
+function fullName(p) {
+  return [p.firstname, p.lastname].filter(Boolean).join(" ").trim();
+}
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function nl2br(s) {
+  return s.replace(/\n/g, "<br>");
 }
 function json(obj, status = 200) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
+  return new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json" } });
 }
