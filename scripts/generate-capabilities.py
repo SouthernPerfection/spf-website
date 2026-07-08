@@ -1,68 +1,68 @@
 #!/usr/bin/env python3
-"""Generate the Capabilities sub-pages. Run from website/ root: python3 scripts/generate-capabilities.py
-Header is a placeholder; run scripts/apply-header.py afterward to inject the shared mega menu.
-Spec placeholders marked [from brochure] — fill from SPF's real brochure before publishing.
+"""Generate the Capabilities sub-pages with REAL specs from SPF's 2026 brochure.
+Run from website/ root: python3 scripts/generate-capabilities.py
+Then run scripts/apply-header.py to inject the shared mega menu.
 """
 import pathlib, json
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 CAPS = [
-  ("design-engineering","Design & Engineering","Design & Engineering — Returnable Packaging Design | Southern Perfection",
-   "In-house design and engineering for returnable racks, containers, and dunnage — design-for-manufacture, CAD, validation, and prototyping under one roof in Byron, GA.",
+  ("design-engineering","Design & Engineering","Design & Engineering — In-House SolidWorks | Southern Perfection",
+   "In-house SolidWorks design and engineering — we turn your math data, print, or a rough idea into a buildable, production-ready part. Design-for-manufacture in Byron, GA. ISO 9001, CAGE 2W654.",
    "Design &amp; engineering, in-house.",
-   "Our engineering team turns your part and print into a validated, build-ready returnable design — design-for-manufacture from day one so it welds clean, ships dense, and runs for years.",
-   [("Design-for-Manufacture","We design for weldability, cost, and durability from the first concept."),
-    ("CAD &amp; Engineering","Full CAD and engineering to your standards. [Software/CAE — from brochure]"),
-    ("Validation","Designs validated to your part, loop, and load before we cut steel."),
-    ("Prototyping","Fast prototype-to-production because design and the floor share one roof.")]),
-  ("laser-cutting","Laser Cutting","Laser Cutting &amp; Tube Laser Cutting | Southern Perfection",
-   "In-house laser cutting and tube laser cutting for precision steel parts — fast, accurate, repeatable. Part of one-roof fabrication in Byron, GA. ISO 9001, CAGE 2W654.",
-   "Laser cutting &amp; tube laser.",
-   "Precision <strong>laser cutting</strong> and tube laser cutting in-house — accurate, repeatable parts that feed straight into welding and forming without leaving the building.",
-   [("Sheet Laser","Precision flat-sheet laser cutting. [Bed size / max thickness — from brochure]"),
-    ("Tube Laser","Tube and structural laser cutting for clean, weld-ready joints."),
-    ("Materials","Carbon steel, stainless, and more. [Material range — from brochure]"),
-    ("Repeatable","Programmed, repeatable cuts for build-to-print consistency at volume.")]),
-  ("robotic-welding","Robotic Welding","Robotic Welding &amp; Fabrication | Southern Perfection",
-   "Robotic welding and precision fabrication for returnable steel racks and assemblies — consistent, repeatable welds at volume. One-roof fabrication in Byron, GA. ISO 9001.",
-   "Robotic welding &amp; fabrication.",
-   "<strong>Robotic welding</strong> delivers consistent, repeatable welds at volume — the backbone of build-to-print quality on every rack, container, and assembly we make.",
-   [("Robotic Cells","Automated welding cells for repeatable, high-volume production. [Cells/reach — from brochure]"),
-    ("Weld Processes","MIG, TIG, and robotic processes to suit the part. [Processes — from brochure]"),
+   "In-house <strong>SolidWorks</strong> engineering turns your math data — or a rough idea — into a buildable, production-ready part. Design-for-manufacture from day one, so it cuts, forms, welds, and finishes clean.",
+   [("SolidWorks","Full 3D CAD from your math data, print, or concept."),
+    ("Design-for-Manufacture","Engineered for weldability, cost, and durability up front."),
+    ("Prototype to Production","Fast iteration because design and the floor share one roof."),
+    ("Built to Your Standards","Validated to your part, loop, and load before we cut steel.")]),
+  ("laser-cutting","Laser & Plasma Cutting","Laser & Plasma Cutting | Southern Perfection",
+   "CNC laser and plasma cutting for clean, precise, repeatable parts — in carbon steel, stainless, aluminum, and magnesium. One-roof fabrication in Byron, GA. ISO 9001, CAGE 2W654.",
+   "Laser &amp; plasma cutting.",
+   "CNC <strong>laser and plasma cutting</strong> for clean, precise, repeatable parts — feeding straight into forming and welding without leaving the building. Carbon steel, stainless, aluminum, and magnesium.",
+   [("CNC Laser","Precision laser cutting for clean, repeatable parts."),
+    ("Plasma Cutting","Plasma for heavier plate and structural cuts."),
+    ("Materials","Carbon steel, stainless, aluminum, and magnesium."),
+    ("Repeatable","Programmed cuts for build-to-print consistency at volume.")]),
+  ("forming","CNC Forming & Bending","CNC Forming, Press Brake & Bending | Southern Perfection",
+   "CNC press-brake forming to 230 tons, CNC tube bending, and plate rolling — accurate, repeatable metal forming under one roof in Byron, GA. ISO 9001, CAGE 2W654.",
+   "CNC forming &amp; bending.",
+   "<strong>Press-brake forming to 230 tons</strong>, CNC tube bending, and plate rolling — accurate, repeatable forming that shapes the steel for your racks, frames, and assemblies.",
+   [("Press Brake to 230 Tons","Heavy CNC press-brake forming for precise, repeatable bends."),
+    ("CNC Tube Bending","Tube and pipe bending to your radius and spec."),
+    ("Plate Rolling","Rolling for cradles, saddles, and cylindrical shapes."),
+    ("To Print","Formed to your drawing and validated for fit-up.")]),
+  ("cnc-machining","CNC Machining","CNC Machining — Turning & Milling | Southern Perfection",
+   "Precision CNC machining — turning and milling for machined components and features — integrated with cutting, forming, welding, and finishing under one roof in Byron, GA. ISO 9001.",
+   "CNC machining.",
+   "Precision <strong>CNC machining</strong> — turning and milling for machined components and features — integrated with the rest of fabrication so machined parts and weldments come together under one roof.",
+   [("CNC Turning","Precision turned components to your print."),
+    ("CNC Milling","Milled features and components, any complexity."),
+    ("Integrated","Machining feeds welding and assembly in the same building."),
+    ("Any Volume","Prototype through production runs.")]),
+  ("robotic-welding","Welding","Welding — MIG, TIG & FANUC Robotic | Southern Perfection",
+   "MIG and TIG welding across 30+ stations, plus FANUC robotic welding — consistent, repeatable welds at production volume. One-roof fabrication in Byron, GA. ISO 9001, CAGE 2W654.",
+   "Welding — 30+ stations &amp; robotic.",
+   "MIG and TIG welding across <strong>30+ stations</strong>, plus <strong>FANUC robotic welding</strong> — consistent, repeatable welds at production volume, the backbone of every rack and weldment we build.",
+   [("30+ MIG/TIG Stations","Deep manual welding capacity for any job size."),
+    ("FANUC Robotic Welding","Automated cells for repeatable, high-volume welds."),
     ("Consistency","Programmed welds mean the 10,000th part matches the first."),
-    ("Manual Too","Skilled manual welding where the part calls for it.")]),
-  ("cnc-machining","CNC Machining","CNC Machining | Southern Perfection Fabrication",
-   "Precision CNC machining in-house — milling and turning to close tolerances for any complexity or volume. Part of one-roof fabrication in Byron, GA. ISO 9001, CAGE 2W654.",
-   "CNC machining, any complexity.",
-   "Precision <strong>CNC machining</strong> — milling and turning to close tolerances — integrated with the rest of fabrication so machined features and welded structures come together under one roof.",
-   [("Milling &amp; Turning","Multi-axis CNC milling and turning. [Envelope / axes — from brochure]"),
-    ("Tolerances","Close-tolerance machining to your print. [Tolerance range — from brochure]"),
-    ("Any Volume","From prototype to production runs."),
-    ("Integrated","Machining feeds welding and assembly without leaving the building.")]),
-  ("forming","Forming","Metal Forming &amp; Press Brake | Southern Perfection",
-   "In-house metal forming and press-brake bending for returnable racks and steel assemblies — accurate, repeatable forms. One-roof fabrication in Byron, GA. ISO 9001.",
-   "Forming &amp; press brake.",
-   "In-house <strong>metal forming</strong> and press-brake bending shapes the steel that becomes your racks and containers — accurate, repeatable, and ready for welding.",
-   [("Press Brake","CNC press-brake forming for precise, repeatable bends. [Max length / tonnage — from brochure]"),
-    ("Rolling &amp; Shaping","Forming for cradles, saddles, and structural shapes."),
-    ("To Print","Formed to your drawing and validated for fit-up."),
-    ("Volume Ready","Repeatable setups for production quantities.")]),
-  ("powder-coating","Powder Coating","Powder Coating &amp; Finishing | Southern Perfection",
-   "In-house powder coating and finishing — durable, full-color coatings for returnable racks that survive the loop. One-roof fabrication in Byron, GA. ISO 9001, CAGE 2W654.",
-   "Powder coating &amp; finishing.",
-   "In-house <strong>powder coating</strong> and finishing gives every rack a durable, consistent finish that survives years of trips — no outsourcing, no handoffs.",
-   [("In-House Line","Full powder-coat line under one roof. [Part size / booth — from brochure]"),
-    ("Full Color","Full color and finish capability. [Colors / spec — from brochure]"),
-    ("Durable","Finishes engineered to survive the returnable loop, not just look good."),
-    ("Pretreatment","Proper prep and pretreatment for coating adhesion and life.")]),
-  ("quality-inspection","CMM Inspection & Quality","CMM Inspection &amp; ISO 9001 Quality | Southern Perfection",
-   "CMM inspection and an ISO 9001 quality system with CAGE 2W654 — the traceability and inspection OEM and defense programs require. Byron, GA.",
-   "CMM inspection &amp; quality.",
-   "A formal quality system built for OEM and defense work — <strong>CMM inspection</strong>, ISO 9001 processes, and CAGE 2W654 traceability, with the documentation your programs demand.",
-   [("CMM Inspection","Coordinate-measuring inspection to your print. [CMM model / capacity — from brochure]"),
-    ("ISO 9001","A certified ISO 9001 quality management system."),
-    ("CAGE 2W654","Government-ready traceability for defense and federal work."),
-    ("Reporting","Inspection reports and documentation. [PPAP/FAI as applicable — from brochure]")]),
+    ("Weldments &amp; Frames","Robotic-welded frames and assemblies at production volume.")]),
+  ("powder-coating","Finishing","Finishing — Wet Paint & Powder Coat | Southern Perfection",
+   "In-house wet paint and powder coat — one of the largest powder-coat ovens in the Southeast — for durable finishes that survive the loop. One-roof fabrication in Byron, GA. ISO 9001.",
+   "Finishing — paint &amp; powder coat.",
+   "In-house <strong>wet paint and powder coat</strong> — one of the <strong>largest powder-coat ovens in the Southeast</strong> — so every part ships finished, not waiting on an outside coater.",
+   [("Powder Coat","One of the largest powder-coat ovens in the Southeast."),
+    ("Wet Paint","Wet paint finishing where the spec calls for it."),
+    ("Durable","Finishes engineered to survive the returnable loop."),
+    ("In-House","No outside coater, no second shop's queue.")]),
+  ("quality-inspection","Quality & Inspection","Quality, CMM Inspection & ISO 9001 | Southern Perfection",
+   "An ISO 9001 quality system with CAGE 2W654 and CMM inspection — the traceability and documentation OEM and defense programs require. Byron, GA, family-owned since 1982.",
+   "Quality &amp; inspection.",
+   "A certified quality system built for OEM and defense work — <strong>ISO 9001</strong>, <strong>CAGE 2W654</strong>, and CMM inspection, with the documentation and traceability your programs demand.",
+   [("ISO 9001","Certified quality management system."),
+    ("CAGE 2W654","Defense-registered traceability for government work."),
+    ("CMM Inspection","Coordinate-measuring inspection to your print."),
+    ("40+ Years","Four generations, one facility, since 1982.")]),
 ]
 
 TPL = """<!DOCTYPE html>
@@ -97,19 +97,18 @@ TPL = """<!DOCTYPE html>
       <div class="hero-actions"><a href="/#rfq" class="btn btn-spark btn-lg">Start an RFQ →</a><a href="/capabilities/" class="btn btn-ghost btn-lg">All capabilities</a></div>
     </div></section>
     <section class="section"><div class="wrap">
-      <p class="kicker">__NAME__</p><h2>Under one roof.</h2>
+      <p class="kicker">__NAME__</p><h2>Under one roof in Byron, GA.</h2>
       <div class="cards-4">__CARDS__</div>
-      <p style="margin-top:1.4rem;color:var(--steel)"><em>Bracketed specs to be filled from SPF's capability brochure.</em></p>
     </div></section>
     <section class="cta-band"><div class="wrap center">
-      <h2 class="h-light">Have a part to quote?</h2><p class="lede lede-light">Send a print — we'll turn around a concept and a number.</p>
+      <h2 class="h-light">Have a part to quote?</h2><p class="lede lede-light">Send a drawing — we'll come back with a real price and lead time.</p>
       <a href="/#rfq" class="btn btn-spark btn-lg">Start an RFQ →</a>
     </div></section>
   </main>
   <footer class="site-footer"><div class="wrap footer-grid">
-    <div><span class="brand-text">SOUTHERN PERFECTION FABRICATION</span><p class="footer-mono">Returnable steel racks &amp; material handling</p><p class="footer-mono">ISO 9001 · CAGE 2W654 · Est. 1982 · Byron, GA</p></div>
+    <div><span class="brand-text">SOUTHERN PERFECTION FABRICATION</span><p class="footer-mono">Complete metal fabrication under one roof</p><p class="footer-mono">ISO 9001 · CAGE 2W654 · Est. 1982 · Byron, GA</p></div>
     <nav aria-label="Footer"><ul><li><a href="/capabilities/">Capabilities</a></li><li><a href="/returnable-steel-racks/">Returnable Racks</a></li><li><a href="/case-studies/">Case Studies</a></li><li><a href="/industries/">Industries</a></li><li><a href="/managed-programs/">Managed Programs</a></li><li><a href="/contact/">Contact</a></li></ul></nav>
-    <div class="footer-contact"><a href="tel:+14789564442" class="phone">478-956-4442</a><br><span class="footer-mono">Byron, GA</span></div>
+    <div class="footer-contact"><a href="tel:+14789564442" class="phone">478-956-4442</a><br><span class="footer-mono">232 Hwy 49 S · Byron, GA 31008</span></div>
   </div><div class="wrap footer-legal"><small>© 2026 Southern Perfection Fabrication. All rights reserved.</small></div></footer>
 </body>
 </html>
@@ -130,5 +129,4 @@ for slug,name,title,desc,h1,intro,cards in CAPS:
     d.mkdir(parents=True, exist_ok=True)
     (d/"index.html").write_text(html)
     print(" -", f"capabilities/{slug}/")
-
 print("Done.")
