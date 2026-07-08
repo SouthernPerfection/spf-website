@@ -19,7 +19,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/api/rfq") {
       if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
-      return handleRfq(request, env);
+      return handleRfq(request, env, url.searchParams.get("debug") === "1");
     }
     return env.ASSETS.fetch(request);
   },
@@ -29,7 +29,7 @@ const HS_BASE = "https://api.hubapi.com";
 const SALES_EMAIL = "sales@southernperfection.com";
 const FROM = "Southern Perfection Fabrication <sales@southernperfection.com>";
 
-async function handleRfq(request, env) {
+async function handleRfq(request, env, debug) {
   let data;
   try {
     data = await request.json();
@@ -52,6 +52,8 @@ async function handleRfq(request, env) {
   };
 
   const results = { hubspot: false, notify: false, confirm: false };
+  let notifyRes = { ok: false, skipped: true };
+  let confirmRes = { ok: false, skipped: true };
 
   // 1. HubSpot contact
   if (env.HUBSPOT_TOKEN) {
@@ -60,23 +62,36 @@ async function handleRfq(request, env) {
 
   // 2 + 3. Emails via Resend
   if (env.RESEND_API_KEY) {
-    results.notify = await sendEmail(env, {
+    notifyRes = await sendEmail(env, {
       to: SALES_EMAIL,
       replyTo: email,
       subject: `New RFQ — ${p.company || fullName(p) || email}`,
       html: internalHtml(p),
-    }).catch(() => false);
+    }).catch((e) => ({ ok: false, detail: String(e) }));
+    results.notify = notifyRes.ok;
 
-    results.confirm = await sendEmail(env, {
+    confirmRes = await sendEmail(env, {
       to: email,
       replyTo: SALES_EMAIL,
       subject: "We received your RFQ — Southern Perfection Fabrication",
       html: clientHtml(p),
-    }).catch(() => false);
+    }).catch((e) => ({ ok: false, detail: String(e) }));
+    results.confirm = confirmRes.ok;
   }
 
-  if (results.hubspot || results.notify) return json({ ok: true, results });
-  return json({ ok: false, error: "not_delivered", results }, 502);
+  const ok = results.hubspot || results.notify;
+  const resp = { ok, results };
+  if (!ok) resp.error = "not_delivered";
+  if (debug) {
+    resp.debug = {
+      hasHubspotToken: !!env.HUBSPOT_TOKEN,
+      hasResendKey: !!env.RESEND_API_KEY,
+      from: FROM,
+      notify: notifyRes,
+      confirm: confirmRes,
+    };
+  }
+  return json(resp, ok ? 200 : 502);
 }
 
 // ---- HubSpot -------------------------------------------------------------
@@ -113,7 +128,15 @@ async function sendEmail(env, { to, replyTo, subject, html }) {
     },
     body: JSON.stringify({ from: FROM, to: [to], reply_to: replyTo, subject, html }),
   });
-  return res.ok;
+  return { ok: res.ok, status: res.status, detail: res.ok ? "" : (await safeText(res)) };
+}
+
+async function safeText(res) {
+  try {
+    return (await res.text()).slice(0, 400);
+  } catch {
+    return "";
+  }
 }
 
 function internalHtml(p) {
