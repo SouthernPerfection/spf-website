@@ -9,6 +9,13 @@
  *  (HubSpot OR the internal email). If nothing lands, the site form falls
  *  back to emailing sales@ directly.
  *
+ *  GET|POST /api/rfq/health  ->  send ONE test email via Resend to confirm the
+ *    integration works (RESEND_API_KEY set + southernperfection.com verified in
+ *    Resend). Does NOT touch HubSpot and does NOT email a prospect. Recipient
+ *    defaults to sales@ and is restricted to @southernperfection.com so the
+ *    endpoint can't be used as an open relay. Override with ?to=name@southernperfection.com.
+ *
+ *
  *  Everything else -> served from static assets (env.ASSETS).
  *
  *  Secrets live in the Cloudflare dashboard (Workers & Pages -> spf-website ->
@@ -67,6 +74,12 @@ export default {
       return Response.redirect("https://southernperfection.com" + path + url.search, 301);
     }
 
+    if (path === "/api/rfq/health") {
+      if (request.method !== "GET" && request.method !== "POST") {
+        return json({ ok: false, error: "method_not_allowed" }, 405);
+      }
+      return handleHealth(env, url.searchParams);
+    }
     if (path === "/api/rfq") {
       if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
       return handleRfq(request, env, url.searchParams.get("debug") === "1");
@@ -166,6 +179,50 @@ async function upsertHubspot(p, env) {
     return update.ok;
   }
   return false;
+}
+
+// ---- Health check --------------------------------------------------------
+// Sends a single test email through Resend and reports the raw result, so you
+// can confirm the integration end-to-end without submitting a fake RFQ (no
+// HubSpot contact, no prospect email). Recipient is locked to our own domain.
+async function handleHealth(env, params) {
+  if (!env.RESEND_API_KEY) {
+    return json(
+      { ok: false, error: "not_configured", detail: "RESEND_API_KEY is not set in Cloudflare — no email can be sent.", from: FROM },
+      503
+    );
+  }
+
+  const to = String(params.get("to") || SALES_EMAIL).trim().toLowerCase();
+  if (!/^[^@\s]+@southernperfection\.com$/.test(to)) {
+    return json(
+      { ok: false, error: "bad_recipient", detail: "Health-check email may only be sent to a @southernperfection.com address." },
+      400
+    );
+  }
+
+  const resend = await sendEmail(env, {
+    to,
+    replyTo: SALES_EMAIL,
+    subject: "Resend health check — Southern Perfection Fabrication",
+    html: healthHtml(to),
+  }).catch((e) => ({ ok: false, detail: String(e) }));
+
+  const resp = { ok: resend.ok, from: FROM, to, resend };
+  if (!resend.ok) {
+    resp.error = "send_failed";
+    // Common cause: the sending domain isn't verified in Resend yet.
+    resp.hint = "A 403 with a domain/verification message means southernperfection.com is not yet verified in Resend.";
+  }
+  return json(resp, resend.ok ? 200 : 502);
+}
+
+function healthHtml(to) {
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;color:#16181C">
+    <h2 style="color:#DD4E14;margin:0 0 12px">Resend is working ✅</h2>
+    <p>This is an automated health-check email confirming that the Southern Perfection Fabrication site can send mail through Resend.</p>
+    <p style="color:#6F7782;font-size:13px">Sent from <strong>${esc(FROM)}</strong> to <strong>${esc(to)}</strong>. Safe to ignore.</p>
+  </div>`;
 }
 
 // ---- Resend --------------------------------------------------------------
