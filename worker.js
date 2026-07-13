@@ -58,8 +58,12 @@ export default {
     // Legacy-URL 301s (active once the domain cuts over to Cloudflare).
     const dest = REDIRECTS[path.toLowerCase()];
     if (dest) return Response.redirect(url.origin + dest, 301);
-    // Catch-all: any other old Weebly .html or /store/ path -> home, no 404s.
-    if (path.endsWith(".html") || path.startsWith("/store/")) {
+    // Clean-URL: /x/index.html -> /x/  (and /index.html -> /)
+    if (path.endsWith("/index.html")) {
+      return Response.redirect(url.origin + path.slice(0, -10), 301);
+    }
+    // Legacy Weebly catch-all: any other .html or /store/ path -> home (keep /404.html reachable).
+    if ((path.endsWith(".html") && path !== "/404.html") || path.startsWith("/store/")) {
       return Response.redirect(url.origin + "/", 301);
     }
     // Normalize www -> apex (canonical is the bare domain).
