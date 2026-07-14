@@ -81,6 +81,7 @@ export default {
 
 const HS_BASE = "https://api.hubapi.com";
 const SALES_EMAIL = "sales@southernperfection.com";
+const NOTIFY_EMAIL = "mmurdock@southernperfection.com"; // internal "New RFQ" alerts route here
 const FROM = "Southern Perfection Fabrication <sales@southernperfection.com>";
 
 async function handleRfq(request, env, debug) {
@@ -117,7 +118,7 @@ async function handleRfq(request, env, debug) {
   // 2 + 3. Emails via Resend
   if (env.RESEND_API_KEY) {
     notifyRes = await sendEmail(env, {
-      to: SALES_EMAIL,
+      to: NOTIFY_EMAIL,
       replyTo: email,
       subject: `New RFQ — ${p.company || fullName(p) || email}`,
       html: internalHtml(p),
