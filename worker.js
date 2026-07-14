@@ -193,42 +193,86 @@ async function safeText(res) {
   }
 }
 
+// Shared email chrome: 560px white card on a paper backdrop, table-based so it
+// renders identically in Outlook / Gmail / Apple Mail. Inline styles + web-safe
+// fonts only (no remote CSS/fonts, which many clients strip).
+const FONT = "Arial,Helvetica,sans-serif";
+
+function emailShell(headerHtml, bodyHtml, footerHtml) {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F3F1EC;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F3F1EC;">
+    <tr><td align="center" style="padding:24px 12px;">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:560px;max-width:560px;background:#ffffff;border:1px solid #E3DFD6;border-radius:12px;overflow:hidden;">
+        ${headerHtml}
+        ${bodyHtml}
+        ${footerHtml}
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+const BRAND_HEADER = `<tr><td style="background:#16181C;padding:22px 28px;">
+          <div style="color:#ffffff;font-size:17px;font-weight:bold;letter-spacing:1px;font-family:${FONT};">SOUTHERN PERFECTION FABRICATION</div>
+          <div style="margin-top:9px;height:3px;width:46px;background:#DD4E14;font-size:0;line-height:3px;">&nbsp;</div>
+          <div style="color:#9AA0A6;font-size:12px;margin-top:9px;font-family:${FONT};">Complete metal fabrication under one roof</div>
+        </td></tr>`;
+
+const BRAND_FOOTER = `<tr><td style="background:#F3F1EC;padding:18px 28px;border-top:1px solid #D8D4CA;">
+          <div style="color:#6F7782;font-size:12px;line-height:1.8;font-family:${FONT};">232 Hwy 49 S &middot; Byron, GA 31008<br>478-956-4442 &middot; toll-free (800) 237-4726 &middot; sales@southernperfection.com<br>ISO 9001 &middot; CAGE 2W654 &middot; Est. 1982</div>
+        </td></tr>`;
+
 function internalHtml(p) {
-  const rows = [
+  const fields = [
     ["Name", fullName(p)],
     ["Company", p.company],
     ["Email", p.email],
     ["Phone", p.phone],
     ["Details", p.message],
-  ]
-    .filter((r) => r[1])
-    .map(
-      (r) =>
-        `<tr><td style="padding:8px 12px;font-weight:600;vertical-align:top;color:#16181C;border-bottom:1px solid #D8D4CA">${esc(
-          r[0]
-        )}</td><td style="padding:8px 12px;color:#16181C;border-bottom:1px solid #D8D4CA">${nl2br(esc(r[1]))}</td></tr>`
-    )
+  ].filter((r) => r[1]);
+  const rows = fields
+    .map((r, i) => {
+      const border = i < fields.length - 1 ? "border-bottom:1px solid #EDEAE3;" : "";
+      const valColor = r[0] === "Email" ? "#1F3864" : "#16181C";
+      const weight = r[0] === "Name" || r[0] === "Company" ? "font-weight:bold;" : "";
+      return `<tr><td style="padding:9px 0;color:#6F7782;width:96px;vertical-align:top;${border}font-family:${FONT};font-size:14px;">${esc(
+        r[0]
+      )}</td><td style="padding:9px 0;color:${valColor};${weight}${border}font-family:${FONT};font-size:14px;line-height:1.5;">${nl2br(esc(r[1]))}</td></tr>`;
+    })
     .join("");
-  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px">
-    <h2 style="color:#DD4E14;margin:0 0 2px">New RFQ</h2>
-    <p style="color:#6F7782;margin:0 0 16px;font-size:13px">Submitted via southernperfection.com</p>
-    <table style="border-collapse:collapse;width:100%;border:1px solid #D8D4CA">${rows}</table>
-    <p style="color:#6F7782;font-size:13px;margin-top:16px">Reply to this email to respond directly to the prospect.</p>
-  </div>`;
+  const replyBtn = p.email
+    ? `<a href="mailto:${encodeURIComponent(p.email)}" style="display:inline-block;margin-top:20px;background:#DD4E14;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:6px;font-family:${FONT};">Reply to ${esc(p.firstname || "the prospect")} &rarr;</a>`
+    : "";
+  const header = `<tr><td style="background:#16181C;padding:20px 28px;">
+          <div style="color:#DD4E14;font-size:20px;font-weight:bold;letter-spacing:1px;font-family:${FONT};">NEW RFQ</div>
+          <div style="color:#9AA0A6;font-size:12px;margin-top:5px;font-family:${FONT};">Submitted via southernperfection.com</div>
+        </td></tr>`;
+  const body = `<tr><td style="padding:24px 28px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;">${rows}</table>
+          ${replyBtn}
+        </td></tr>`;
+  const footer = `<tr><td style="background:#F3F1EC;padding:14px 28px;border-top:1px solid #D8D4CA;">
+          <div style="color:#6F7782;font-size:12px;font-family:${FONT};">Reply to this email to respond directly to the prospect.</div>
+        </td></tr>`;
+  return emailShell(header, body, footer);
 }
 
 function clientHtml(p) {
   const first = p.firstname || "there";
-  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;color:#16181C">
-    <h2 style="color:#DD4E14;margin:0 0 12px">Thanks — we've got your RFQ.</h2>
-    <p>Hi ${esc(first)},</p>
-    <p>Thanks for reaching out to Southern Perfection Fabrication. We've received your request and our team is reviewing it now. We'll get back to you shortly — usually within one business day — with next steps.</p>
-    <p><strong>Have a drawing or print?</strong> Just reply to this email and attach it, and we'll match it to your request.</p>
-    <p style="margin-top:20px">Talk soon,<br>The team at Southern Perfection Fabrication</p>
-    <hr style="border:none;border-top:1px solid #D8D4CA;margin:20px 0">
-    <p style="color:#6F7782;font-size:13px">Southern Perfection Fabrication · 232 Hwy 49 S, Byron, GA 31008<br>
-    478-956-4442 · toll-free (800) 237-4726 · sales@southernperfection.com</p>
-  </div>`;
+  const body = `<tr><td style="padding:28px 28px 8px;">
+          <div style="color:#DD4E14;font-size:12px;font-weight:bold;letter-spacing:1.5px;font-family:${FONT};">RFQ RECEIVED</div>
+          <div style="color:#16181C;font-size:22px;font-weight:bold;margin:6px 0 16px;font-family:${FONT};">Thanks &mdash; we've got your RFQ.</div>
+          <p style="color:#16181C;font-size:14px;line-height:1.6;margin:0 0 12px;font-family:${FONT};">Hi ${esc(first)},</p>
+          <p style="color:#3c3f45;font-size:14px;line-height:1.6;margin:0 0 18px;font-family:${FONT};">Thanks for reaching out to Southern Perfection Fabrication. Your request is in front of our team now &mdash; we'll follow up within one business day with next steps.</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 20px;"><tr><td style="background:#F3F1EC;border-left:3px solid #DD4E14;padding:14px 16px;">
+            <div style="color:#16181C;font-size:14px;font-weight:bold;margin-bottom:3px;font-family:${FONT};">Have a drawing or print?</div>
+            <div style="color:#5F5E5A;font-size:13px;line-height:1.5;font-family:${FONT};">Just reply to this email and attach it &mdash; we'll match it to your request.</div>
+          </td></tr></table>
+          <a href="mailto:sales@southernperfection.com?subject=Re:%20My%20RFQ" style="display:inline-block;background:#DD4E14;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:6px;font-family:${FONT};">Reply with your details &rarr;</a>
+          <p style="color:#3c3f45;font-size:14px;line-height:1.6;margin:22px 0 0;font-family:${FONT};">Talk soon,<br>The team at Southern Perfection Fabrication</p>
+        </td></tr>`;
+  return emailShell(BRAND_HEADER, body, BRAND_FOOTER);
 }
 
 // ---- helpers -------------------------------------------------------------
