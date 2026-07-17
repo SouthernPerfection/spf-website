@@ -34,9 +34,9 @@ NAV = """  <a class="skip-link" href="#main">Skip to content</a>
         <input type="checkbox" id="nav-toggle" class="nav-cb" aria-hidden="true" tabindex="-1">
         <label for="nav-toggle" class="nav-burger">Menu</label>
         <ul class="mega">
-          <li class="mega-item"><span class="mega-top">What We Build</span>
+          <li class="mega-item"><a class="mega-top" href="/returnable-packaging/">Returnable Packaging</a>
             <div class="mega-panel"><div class="mega-cols">
-              <div class="mega-col"><p class="mega-h"><a href="/returnable-packaging/">Returnable Packaging</a></p><ul>
+              <div class="mega-col"><p class="mega-h">Steel Racks &amp; Containers</p><ul>
                 <li><a href="/automotive-racks/">Automotive Racks</a></li>
                 <li><a href="/stack-racks/">Stack Racks</a></li>
                 <li><a href="/steel-pallets/">Steel Pallets</a></li>
@@ -106,6 +106,7 @@ NAV = """  <a class="skip-link" href="#main">Skip to content</a>
               </ul></div>
             </div></div>
           </li>
+          <li class="mega-item"><a class="mega-top" href="/locations/">Locations</a></li>
           <li class="mega-item"><a class="mega-top" href="/managed-programs/">Managed Programs</a></li>
           <li class="mega-item"><span class="mega-top">Resources</span>
             <div class="mega-panel"><div class="mega-cols">
