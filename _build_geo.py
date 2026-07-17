@@ -134,7 +134,7 @@ NAV = """  <a class="skip-link" href="#main">Skip to content</a>
 FOOTER = """  <footer class="site-footer">
     <div class="wrap footer-grid">
       <div><span class="brand-text">SOUTHERN PERFECTION FABRICATION</span><p class="footer-mono">Returnable steel racks &amp; material handling</p><p class="footer-mono">ISO 9001 · CAGE 2W654 · Est. 1982 · Byron, GA</p></div>
-      <nav aria-label="Footer"><ul><li><a href="/returnable-packaging/">Returnable Packaging</a></li><li><a href="/returnable-steel-racks/">Returnable Racks</a></li><li><a href="/rack-repair-refurbishment/">Repair &amp; Refurb</a></li><li><a href="/dunnage/">Dunnage</a></li><li><a href="/capabilities/">Capabilities</a></li></ul></nav>
+      <nav aria-label="Footer"><ul><li><a href="/returnable-packaging/">Returnable Packaging</a></li><li><a href="/returnable-steel-racks/">Returnable Racks</a></li><li><a href="/rack-repair-refurbishment/">Repair &amp; Refurb</a></li><li><a href="/dunnage/">Dunnage</a></li><li><a href="/capabilities/">Capabilities</a></li><li><a href="/locations/">Locations</a></li></ul></nav>
       <div class="footer-contact"><a href="tel:+14789564442" class="phone">478-956-4442</a><br><span class="footer-mono">Byron, GA</span></div>
     </div>
     <div class="wrap footer-legal"><small>© 2026 Southern Perfection Fabrication. All rights reserved.</small></div>
@@ -171,6 +171,7 @@ def page(title, desc, canonical, schema, body, cta_h, cta_p):
 {FONTS}
 {schema_blocks}
 {ANALYTICS}
+  <script src="/assets/rfq-attribution.js" defer></script>
 </head>
 <body>
 {NAV}
@@ -427,6 +428,97 @@ CITIES = [
                 ("Pharma &amp; Medical Device","Clean, traceable dunnage and containers for regulated products.",None),
                 ("General Manufacturing","Custom returnable packaging for any repeatable Minnesota line.","/industries/general-industrial/")],
   "prods":['returnable-containers','dunnage','returnable-steel-racks','steel-pallets']},
+
+ # ---- Tier 2 ----
+ {"slug":"indianapolis-in","city":"Indianapolis","state":"IN","metro":"Indianapolis, IN","home":False,
+  "freight":"about a day by truck","miles":"roughly 530 miles","photo":"returnable-steel-racks.jpg",
+  "intro":"Indianapolis blends powertrain and truck manufacturing with appliance, pharmaceutical, and medical-device production — a broad base of closed-loop candidates. From Byron, GA we design and freight returnable steel racks, dunnage, and containers into the Indianapolis metro.",
+  "industries":[("Truck, Bus &amp; Powertrain","Sequencing and shipping racks for drivetrain and engine parts.","/industries/transportation-trailer/"),
+                ("Appliance &amp; HVAC","Protective racks and containers for finished units and components.",None),
+                ("Pharma &amp; Medical Device","Clean, traceable dunnage and containers for regulated products.",None),
+                ("General Manufacturing","Custom returnable packaging for any repeatable Central Indiana line.","/industries/general-industrial/")],
+  "prods":['returnable-steel-racks','engine-racks','dunnage','returnable-containers']},
+
+ {"slug":"charleston-sc","city":"Charleston","state":"SC","metro":"Charleston, SC","home":False,
+  "freight":"about 4 hours by truck","miles":"roughly 260 miles","photo":"automotive-returnable-racks.jpg",
+  "intro":"Charleston pairs automotive and EV/battery production with aerospace and heavy equipment on the coast. From Byron, GA we’re a short freight lane away with returnable steel racks, dunnage, and battery-tray protection for the Lowcountry’s plants.",
+  "industries":[("Automotive Tier-1","Sequencing and shipping racks built to your print.","/industries/automotive/"),
+                ("EV &amp; Battery","Dunnage and racks that handle heavy, sensitive cells and trays.","/industries/ev-battery/"),
+                ("Heavy Equipment","Rugged racks for large castings and off-highway components.","/industries/heavy-equipment/"),
+                ("Aerospace &amp; Defense","Traceable returnable packaging and GSE for coastal aerospace.","/industries/aerospace-defense/")],
+  "prods":['returnable-steel-racks','automotive-racks','dunnage','custom-foam-inserts']},
+
+ {"slug":"savannah-ga","city":"Savannah","state":"GA","metro":"Savannah, GA","home":False,
+  "freight":"about 2½ hours by truck","miles":"roughly 170 miles","photo":"heavy-equipment.jpg",
+  "intro":"Savannah’s port-driven manufacturing base — heavy equipment, aerospace, and shipbuilding — runs on rugged returnable packaging. As a fellow Georgia manufacturer in Byron, we’re a short, often same-day freight lane from the Savannah metro.",
+  "industries":[("Heavy Equipment","Rugged racks for large castings, weldments, and off-highway parts.","/industries/heavy-equipment/"),
+                ("Truck, Bus &amp; Powertrain","Sequencing and shipping racks for drivetrain and engine parts.","/industries/transportation-trailer/"),
+                ("Aerospace &amp; Shipbuilding","Traceable returnable packaging and GSE, CAGE 2W654.","/industries/aerospace-defense/"),
+                ("General Manufacturing","Custom returnable packaging for any repeatable Coastal Georgia line.","/industries/general-industrial/")],
+  "prods":['returnable-steel-racks','weldments-frames','dunnage','steel-pallets']},
+
+ {"slug":"memphis-tn","city":"Memphis","state":"TN","metro":"Memphis, TN","home":False,
+  "freight":"about 6 hours by truck","miles":"roughly 390 miles","photo":"distribution-logistics.jpg",
+  "intro":"Memphis is a distribution and manufacturing crossroads — heavy equipment, appliance, and medical production feeding one of the country’s biggest logistics hubs. From Byron, GA we freight returnable steel racks, carts, and containers into the Memphis metro.",
+  "industries":[("Heavy Equipment","Rugged racks for large castings and off-highway components.","/industries/heavy-equipment/"),
+                ("Appliance &amp; HVAC","Protective racks and containers for finished units and components.",None),
+                ("Distribution &amp; Logistics","Reusable racks and pallets that standardize how parts move.","/industries/distribution-logistics/"),
+                ("Pharma &amp; Medical Device","Clean, traceable dunnage and containers for regulated products.",None)],
+  "prods":['returnable-steel-racks','industrial-carts','dunnage','returnable-containers']},
+
+ {"slug":"nashville-tn","city":"Nashville","state":"TN","metro":"Nashville, TN","home":False,
+  "freight":"about 4 hours by truck","miles":"roughly 270 miles","photo":"automotive-shipping-racks.jpg",
+  "intro":"Middle Tennessee around Nashville has become an automotive and consumer-products manufacturing hub. From Byron, GA we’re a short freight lane away with returnable steel racks, automotive racks, and dunnage built to your loop.",
+  "industries":[("Automotive Tier-1","Line-side and shipping racks for regional assembly and supply.","/industries/automotive/"),
+                ("Furniture &amp; Building Products","Protective racks and dunnage for large, finished goods.",None),
+                ("Tire &amp; Rubber","Rolling and stacking racks that move and sequence tires.",None),
+                ("General Manufacturing","Custom returnable packaging for any repeatable Middle Tennessee line.","/industries/general-industrial/")],
+  "prods":['returnable-steel-racks','automotive-racks','tire-racks','dunnage']},
+
+ {"slug":"greensboro-nc","city":"Greensboro","state":"NC","metro":"Greensboro, NC","home":False,
+  "freight":"about 5 hours by truck","miles":"roughly 340 miles","photo":"returnable-steel-racks.jpg",
+  "intro":"The Piedmont Triad around Greensboro is a growing aerospace and electronics/semiconductor corridor — production that demands clean, protective returnable packaging. From Byron, GA we design and freight racks, foam, and dunnage into the Greensboro metro.",
+  "industries":[("Semiconductor &amp; Electronics","Clean, ESD-aware foam and racks for sensitive assemblies.",None),
+                ("Aerospace &amp; Defense","Traceable returnable packaging and GSE, CAGE 2W654.","/industries/aerospace-defense/"),
+                ("General Manufacturing","Custom returnable packaging for any repeatable Triad line.","/industries/general-industrial/"),
+                ("Distribution &amp; Logistics","Reusable racks and pallets that standardize how parts move.","/industries/distribution-logistics/")],
+  "prods":['returnable-steel-racks','custom-foam-inserts','dunnage','returnable-containers']},
+
+ {"slug":"st-louis-mo","city":"St. Louis","state":"MO","metro":"St. Louis, MO","home":False,
+  "freight":"about a day by truck","miles":"roughly 560 miles","photo":"food-grade-returnable-racks.jpg",
+  "intro":"St. Louis spans aerospace and defense, industrial and power equipment, and a deep food and beverage base — a wide mix of closed-loop candidates. From Byron, GA we freight returnable steel racks, dunnage, and containers to the St. Louis metro.",
+  "industries":[("Aerospace &amp; Defense","Traceable returnable packaging and GSE, CAGE 2W654.","/industries/aerospace-defense/"),
+                ("Industrial / Power / Electrical","Racks and reels for heavy electrical and power equipment.","/industries/energy-power/"),
+                ("Food, Beverage &amp; CPG","Washable steel containers and racks for high-volume food lines.","/industries/food-beverage-dairy/"),
+                ("General Manufacturing","Custom returnable packaging for any repeatable Missouri line.","/industries/general-industrial/")],
+  "prods":['returnable-steel-racks','weldments-frames','dunnage','returnable-containers']},
+
+ {"slug":"wichita-ks","city":"Wichita","state":"KS","metro":"Wichita, KS","home":False,
+  "freight":"about a day and a half by truck","miles":"roughly 870 miles","photo":"returnable-steel-racks.jpg",
+  "intro":"Wichita is the “Air Capital of the World” — aerospace and defense manufacturing that demands traceable, protective returnable packaging. From Byron, GA we build to ISO 9001 and CAGE 2W654 and freight racks, weldments, and foam to the Wichita metro.",
+  "industries":[("Aerospace &amp; Defense","The metro’s signature industry — traceable packaging and GSE.","/industries/aerospace-defense/"),
+                ("Appliance &amp; HVAC","Protective racks and containers for finished units and components.",None),
+                ("General Manufacturing","Custom returnable packaging for any repeatable South-Central Kansas line.","/industries/general-industrial/"),
+                ("Industrial Machinery","Racks and weldments for machinery and OEM components.","/industries/industrial-machinery/")],
+  "prods":['returnable-steel-racks','weldments-frames','guards-platforms','custom-foam-inserts']},
+
+ {"slug":"cleveland-oh","city":"Cleveland","state":"OH","metro":"Cleveland, OH","home":False,
+  "freight":"about a day by truck","miles":"roughly 620 miles","photo":"heavy-equipment.jpg",
+  "intro":"Cleveland’s dense industrial, power-equipment, and powertrain base needs returnable packaging engineered for heavy, repeat loads. From Byron, GA we build and freight returnable steel racks, coil racks, and industrial carts into the Cleveland metro.",
+  "industries":[("Industrial / Power / Electrical","The metro’s dominant base — racks and reels for heavy gear.","/industries/energy-power/"),
+                ("Truck, Bus &amp; Powertrain","Sequencing and shipping racks for drivetrain and engine parts.","/industries/transportation-trailer/"),
+                ("Appliance &amp; HVAC","Protective racks and containers for finished units and components.",None),
+                ("General Manufacturing","Custom returnable packaging for any repeatable Northeast Ohio line.","/industries/general-industrial/")],
+  "prods":['returnable-steel-racks','coil-racks','industrial-carts','weldments-frames']},
+
+ {"slug":"detroit-mi","city":"Detroit","state":"MI","metro":"Detroit, MI","home":False,
+  "freight":"about a day and a half by truck","miles":"roughly 720 miles","photo":"automotive-returnable-racks.jpg",
+  "intro":"Detroit is the center of North American automotive manufacturing — OEM assembly and the Tier-1 supply base around it, all running on returnable racks and dunnage. From Byron, GA we freight automotive racks, engine racks, and dunnage into the Detroit metro.",
+  "industries":[("Automotive OEM","Line-side, sequencing, and shipping racks built to your print.","/industries/automotive/"),
+                ("Automotive Tier-1","Returnable racks and dunnage that index each part for the plant.","/industries/automotive/"),
+                ("Truck, Bus &amp; Powertrain","Sequencing and shipping racks for drivetrain and engine parts.","/industries/transportation-trailer/"),
+                ("EV &amp; Battery","Dunnage and racks for heavy, sensitive cells and trays.","/industries/ev-battery/")],
+  "prods":['automotive-racks','engine-racks','bumper-racks','returnable-steel-racks']},
 ]
 
 # ---------------------------------------------------------------- CITY PAGES
