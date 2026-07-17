@@ -89,8 +89,9 @@
   <!-- ANALYTICS -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7NE6WQG77Y"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-7NE6WQG77Y');</script>
-  <script>document.addEventListener('DOMContentLoaded',function(){var s=document.getElementById('rfqSuccess');if(!s)return;new MutationObserver(function(){if(!s.hidden&&window.gtag){gtag('event','generate_lead',{event_category:'RFQ',event_label:location.pathname});}}).observe(s,{attributes:true,attributeFilter:['hidden']});});</script>
+  <script>document.addEventListener('DOMContentLoaded',function(){var s=document.getElementById('rfqSuccess');if(!s)return;new MutationObserver(function(){if(!s.hidden&&window.gtag){var ss;try{ss=window.sessionStorage;}catch(e){}var src=(ss&&(ss.getItem('spf_source')||ss.getItem('spf_landing')))||location.pathname;var land=(ss&&ss.getItem('spf_landing'))||location.pathname;gtag('event','generate_lead',{event_category:'RFQ',event_label:src,source_page:src,landing_page:land});}}).observe(s,{attributes:true,attributeFilter:['hidden']});});</script>
   <!-- /ANALYTICS -->
+  <script src="/assets/rfq-attribution.js" defer></script>
 </head>
 
 <body>
@@ -470,8 +471,12 @@
       var role = val('role'); var details = val('details');
       var message = details + (role ? (details ? '\n\n' : '') + 'Role: ' + role : '');
       var hadFile = !!(document.getElementById('part') && document.getElementById('part').files.length);
+      var ss; try{ ss=window.sessionStorage; }catch(err){}
+      var source_page = (ss && (ss.getItem('spf_source') || ss.getItem('spf_landing'))) || location.pathname;
+      var landing_page = (ss && ss.getItem('spf_landing')) || location.pathname;
       var payload = { firstname:firstname, lastname:lastname, company:val('company'),
-        email:val('email'), phone:val('phone'), message:message };
+        email:val('email'), phone:val('phone'), message:message,
+        source_page:source_page, landing_page:landing_page };
       statusEl.textContent = 'Sending…'; statusEl.className = 'form-status';
       fetch('/api/rfq', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
         .then(function(r){ if(r.ok){ showSuccess(hadFile); } else { emailFallback(payload, name, hadFile); } })

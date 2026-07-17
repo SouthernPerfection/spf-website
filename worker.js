@@ -106,13 +106,16 @@ async function handleRfq(request, env, debug) {
     message: str(data.message),
   };
 
+  // Lead-source attribution (page the RFQ CTA was clicked from + session landing page).
+  const meta = { source_page: str(data.source_page), landing_page: str(data.landing_page) };
+
   const results = { hubspot: false, notify: false, confirm: false };
   let notifyRes = { ok: false, skipped: true };
   let confirmRes = { ok: false, skipped: true };
 
   // 1. HubSpot contact
   if (env.HUBSPOT_TOKEN) {
-    results.hubspot = await upsertHubspot(p, env).catch(() => false);
+    results.hubspot = await upsertHubspot(p, env, meta).catch(() => false);
   }
 
   // 2 + 3. Emails via Resend
@@ -121,7 +124,7 @@ async function handleRfq(request, env, debug) {
       to: NOTIFY_EMAIL,
       replyTo: email,
       subject: `New RFQ — ${p.company || fullName(p) || email}`,
-      html: internalHtml(p),
+      html: internalHtml(p, meta),
     }).catch((e) => ({ ok: false, detail: String(e) }));
     results.notify = notifyRes.ok;
 
@@ -150,7 +153,7 @@ async function handleRfq(request, env, debug) {
 }
 
 // ---- HubSpot -------------------------------------------------------------
-async function upsertHubspot(p, env) {
+async function upsertHubspot(p, env, meta) {
   const headers = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${env.HUBSPOT_TOKEN}`,
@@ -159,6 +162,16 @@ async function upsertHubspot(p, env) {
   Object.keys(p).forEach((k) => {
     if (k === "email" || p[k]) properties[k] = p[k];
   });
+  // Fold lead-source into the message note (avoids needing a custom HubSpot property).
+  if (meta && (meta.source_page || meta.landing_page)) {
+    const note =
+      "Submitted from " +
+      (meta.source_page || "(unknown)") +
+      (meta.landing_page && meta.landing_page !== meta.source_page
+        ? " · entered site at " + meta.landing_page
+        : "");
+    properties.message = (properties.message ? properties.message + "\n\n" : "") + "— " + note;
+  }
   const body = JSON.stringify({ properties });
 
   const create = await fetch(`${HS_BASE}/crm/v3/objects/contacts`, { method: "POST", headers, body });
@@ -224,13 +237,16 @@ const BRAND_FOOTER = `<tr><td style="background:#F3F1EC;padding:18px 28px;border
           <div style="color:#6F7782;font-size:12px;line-height:1.8;font-family:${FONT};">232 Hwy 49 S &middot; Byron, GA 31008<br>478-956-4442 &middot; toll-free (800) 237-4726 &middot; sales@southernperfection.com<br>ISO 9001 &middot; CAGE 2W654 &middot; Est. 1982</div>
         </td></tr>`;
 
-function internalHtml(p) {
+function internalHtml(p, meta) {
+  meta = meta || {};
   const fields = [
     ["Name", fullName(p)],
     ["Company", p.company],
     ["Email", p.email],
     ["Phone", p.phone],
     ["Details", p.message],
+    ["Source", meta.source_page],
+    ["Entered at", meta.landing_page && meta.landing_page !== meta.source_page ? meta.landing_page : ""],
   ].filter((r) => r[1]);
   const rows = fields
     .map((r, i) => {
