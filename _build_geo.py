@@ -176,6 +176,8 @@ def page(title, desc, canonical, schema, body, cta_h, cta_p):
 {schema_blocks}
 {ANALYTICS}
   <script src="/assets/rfq-attribution.js" defer></script>
+  <!-- RB2B visitor identification -->
+  <script>!function(key) {if (window.reb2b) return;window.reb2b = {loaded: true};var s = document.createElement("script");s.async = true;s.src = "https://ddwl4m2hdecbv.cloudfront.net/b/" + key + "/" + key + ".js.gz";document.getElementsByTagName("script")[0].parentNode.insertBefore(s, document.getElementsByTagName("script")[0]);}("VN080HZ1Z26J");</script>
 </head>
 <body>
 {NAV}
