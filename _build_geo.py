@@ -121,6 +121,7 @@ NAV = """  <a class="skip-link" href="#main">Skip to content</a>
                 <li><a href="/case-studies/">Case Studies</a></li>
                 <li><a href="/how-to-spec-a-returnable-rack/">Spec a Rack: Free Guide</a></li>
                 <li><a href="/returnable-vs-expendable-packaging/">Returnable vs. Expendable</a></li>
+                <li><a href="/returnable-packaging-roi/">ROI Calculator</a></li>
               </ul></div>
               <div class="mega-col"><p class="mega-h">Company</p><ul>
                 <li><a href="/about/">About</a></li>
@@ -836,10 +837,133 @@ def build_custom_manufacturing():
     print("wrote custom-manufacturing/index.html")
 
 
+def build_roi():
+    canonical = "https://southernperfection.com/returnable-packaging-roi/"
+    title = "Returnable Packaging ROI Calculator — Returnable vs. Disposable | Southern Perfection Fabrication"
+    desc = ("Free returnable packaging ROI calculator — compare returnable steel racks vs. disposable packaging by "
+            "cost per trip, payback period, and annual savings. Plug in your own numbers. Built by Southern "
+            "Perfection Fabrication, Byron, GA.")
+    faqs = [
+        ("How do you calculate returnable packaging ROI?", "The metric that matters is cost per trip: a returnable rack's one-time cost spread across the trips it makes, plus return freight and upkeep — versus the recurring cost of disposable packaging and the transit damage it lets through. When cost per trip beats disposable, the fleet pays for itself. This calculator estimates your payback period, annual savings, and cost per trip from your numbers."),
+        ("What's a typical payback period for returnable racks?", "It depends on volume and damage rates, but engineered correctly, returnable steel racks commonly pay back in well under a year on high-volume lanes — then keep saving for years, because the same racks run hundreds of trips."),
+        ("Does returnable packaging really cut transit damage?", "Yes — usually the biggest hidden cost of disposable. A rack designed to index and protect each part largely eliminates the shifting and crushing that expendable packaging allows, cutting scrap, rework, and line-down."),
+        ("Can you give me exact numbers for my parts?", "Yes. The calculator is a planning estimate. Send your parts, volumes, and freight lanes and we'll return exact costing with the quote — the same design-to-print process behind our rack programs."),
+    ]
+    schema = [
+        {"@context":"https://schema.org","@graph":[
+            {"@type":"BreadcrumbList","itemListElement":[
+                {"@type":"ListItem","position":1,"name":"Home","item":"https://southernperfection.com/"},
+                {"@type":"ListItem","position":2,"name":"Returnable Packaging","item":"https://southernperfection.com/returnable-packaging/"},
+                {"@type":"ListItem","position":3,"name":"ROI Calculator","item":canonical}]},
+            {"@type":"WebApplication","name":"Returnable Packaging ROI Calculator","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"provider":{"@type":"Organization","name":"Southern Perfection Fabrication","telephone":"+1-478-956-4442"}}
+        ]},
+        {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+            {"@type":"Question","name":q,"acceptedAnswer":{"@type":"Answer","text":a}} for q,a in faqs]}
+    ]
+    faq_html = "\n".join(f'          <details><summary>{q}</summary><p>{a}</p></details>' for q,a in faqs)
+    # NOTE: plain (non-f) string — contains JS braces.
+    body = """    <section class="hero" aria-labelledby="h">
+      <div class="wrap hero-split"><div class="hero-copy">
+        <p class="eyebrow"><a href="/" style="color:inherit">Home</a> · <a href="/returnable-packaging/" style="color:inherit">Returnable Packaging</a> · ROI Calculator</p>
+        <h1 id="h">Returnable packaging ROI calculator.</h1>
+        <p class="lede">See what switching from disposable packaging to <strong>returnable steel racks</strong> is worth — cost per trip, payback period, and annual savings. Plug in your numbers below, then send us your parts for exact costing.</p>
+      </div><div class="hero-media"><img src="/assets/photos/returnable-racks-fleet.jpg" alt="Returnable steel rack fleet built by Southern Perfection Fabrication in Byron, GA" width="1500" loading="eager" fetchpriority="high"></div></div>
+    </section>
+
+    <section class="section"><div class="wrap">
+      <p class="kicker">Returnable vs. disposable</p>
+      <h2>Run your numbers.</h2>
+      <div class="roi-grid">
+        <div class="roi-inputs">
+          <h3>Your numbers</h3>
+          <label>Annual shipments<input id="roi-n" class="roi-input" type="number" value="5000" min="0"></label>
+          <label>Disposable packaging cost per shipment ($)<input id="roi-d" class="roi-input" type="number" value="18" min="0" step="0.5"></label>
+          <label>Transit damage rate (%)<input id="roi-dr" class="roi-input" type="number" value="3" min="0" step="0.1"></label>
+          <label>Average cost per damage incident ($)<input id="roi-dc" class="roi-input" type="number" value="250" min="0"></label>
+          <label>Returnable rack cost, each ($)<input id="roi-rc" class="roi-input" type="number" value="600" min="0"></label>
+          <label>Trips per rack, per year<input id="roi-tpr" class="roi-input" type="number" value="40" min="1"></label>
+          <label>Return freight per trip ($)<input id="roi-rf" class="roi-input" type="number" value="3" min="0" step="0.5"></label>
+        </div>
+        <div class="roi-results">
+          <div class="roi-hero"><span class="roi-hero-label">Payback period</span><span id="r-payback" class="roi-hero-num">—</span></div>
+          <div class="roi-stats">
+            <div class="roi-stat"><span id="r-save" class="roi-stat-num">—</span><span class="roi-stat-label">Annual savings</span></div>
+            <div class="roi-stat"><span id="r-net3" class="roi-stat-num">—</span><span class="roi-stat-label">3-year net savings</span></div>
+            <div class="roi-stat"><span id="r-cpt-ret" class="roi-stat-num">—</span><span class="roi-stat-label">Cost/trip · returnable</span></div>
+            <div class="roi-stat"><span id="r-cpt-disp" class="roi-stat-num">—</span><span class="roi-stat-label">Cost/trip · disposable</span></div>
+            <div class="roi-stat"><span id="r-dmg" class="roi-stat-num">—</span><span class="roi-stat-label">Transit damage avoided</span></div>
+            <div class="roi-stat"><span id="r-fleet" class="roi-stat-num">—</span><span class="roi-stat-label">Fleet · <span id="r-invest">—</span> invest</span></div>
+          </div>
+          <a href="/#rfq" class="btn btn-spark btn-lg">Get this costed for your parts →</a>
+          <p class="roi-note">Planning estimate only. Send your parts, volumes, and lanes and we’ll return exact numbers with the quote.</p>
+        </div>
+      </div>
+    </div></section>
+
+    <section class="section section-paper"><div class="wrap article-body">
+      <p class="kicker">How the math works</p>
+      <h2>It comes down to cost per trip.</h2>
+      <p>Disposable packaging is a cost you pay <em>every single shipment</em> — plus the transit damage it lets through, which shows up as scrap, rework, and line-down. A <a href="/returnable-steel-racks/">returnable steel rack</a> is a one-time investment that runs hundreds of trips, so its cost per trip keeps falling while protecting the part every time. The calculator divides your rack fleet cost across its trips, adds return freight and light upkeep, then compares that to what disposable is costing you today. When you’re ready, we’ll <a href="/#rfq">cost it exactly</a> for your parts — or read the deeper <a href="/returnable-vs-expendable-packaging/">returnable vs. expendable</a> breakdown.</p>
+    </div></section>
+
+    <section class="section">
+      <div class="wrap">
+        <p class="kicker">FAQ</p>
+        <h2>Returnable packaging ROI — answered.</h2>
+        <div class="faq">
+""" + faq_html + """
+        </div>
+      </div>
+    </section>
+
+    <script>
+    (function(){
+      function num(id){ var v = parseFloat(document.getElementById(id).value); return isNaN(v) ? 0 : v; }
+      function money(x){ return '$' + Math.round(x).toLocaleString(); }
+      function calc(){
+        var n=num('roi-n'), d=num('roi-d'), dr=num('roi-dr')/100, dc=num('roi-dc'),
+            rc=num('roi-rc'), tpr=num('roi-tpr'), rf=num('roi-rf');
+        if(tpr<=0){ tpr=1; }
+        var racks = Math.ceil(n/tpr);
+        var invest = racks*rc;
+        var dispAnnual = n*d + n*dr*dc;
+        var retAnnual = n*rf + invest*0.03 + n*dr*0.1*dc;   /* return freight + ~3% upkeep + ~90% less damage */
+        var save = dispAnnual - retAnnual;
+        var payback = save>0 ? invest/save : 0;
+        var net3 = 3*dispAnnual - (invest + 3*retAnnual);
+        var cptRet = n>0 ? (invest + 3*retAnnual)/(3*n) : 0;
+        var cptDisp = n>0 ? dispAnnual/n : 0;
+        var dmgAvoid = n*dr*dc*0.9;
+        function set(id,v){ var e=document.getElementById(id); if(e){ e.textContent=v; } }
+        set('r-payback', payback>0 ? (payback<1 ? Math.max(1,Math.round(payback*12))+' mo' : payback.toFixed(1)+' yr') : '—');
+        set('r-save', save>0 ? money(save)+'/yr' : '—');
+        set('r-net3', money(net3));
+        set('r-cpt-ret', money(cptRet));
+        set('r-cpt-disp', money(cptDisp));
+        set('r-dmg', money(dmgAvoid)+'/yr');
+        set('r-fleet', racks.toLocaleString()+' racks');
+        set('r-invest', money(invest));
+      }
+      var els = document.querySelectorAll('.roi-input');
+      for(var i=0;i<els.length;i++){ els[i].addEventListener('input', calc); }
+      calc();
+    })();
+    </script>
+"""
+    html = page(title, desc, canonical, schema, body,
+                "Want this costed for your exact parts?",
+                "Send your parts, volumes, and lanes — we’ll return real numbers with the quote.")
+    os.makedirs("returnable-packaging-roi", exist_ok=True)
+    with open("returnable-packaging-roi/index.html", "w") as f:
+        f.write(html)
+    print("wrote returnable-packaging-roi/index.html")
+
+
 if __name__ == "__main__":
     build_pillar()
     build_custom_manufacturing()
+    build_roi()
     for c in CITIES:
         build_city(c)
     build_locations()
-    print(f"\nDONE: 2 pillars + {len(CITIES)} city pages + 1 locations hub = {len(CITIES)+3} pages")
+    print(f"\nDONE: 2 pillars + ROI calc + {len(CITIES)} city pages + 1 locations hub = {len(CITIES)+4} pages")
