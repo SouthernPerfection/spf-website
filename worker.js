@@ -212,7 +212,8 @@ async function safeText(res) {
 }
 
 // ---- RB2B website-visitor webhook ---------------------------------------
-// RB2B POSTs an identified visitor here; we email a formatted alert to the team.
+// RB2B POSTs an identified visitor here; we (1) email a branded alert to the team
+// and (2) upsert a HubSpot contact tagged lead_source = "RB2B".
 const RB2B_TO = ["tristan.wynn@southernperfection.com", "william.doxey@southernperfection.com"];
 
 async function handleRb2b(request, env, token) {
@@ -231,28 +232,24 @@ async function handleRb2b(request, env, token) {
     }
   }
   if (!data || typeof data !== "object") return json({ ok: false, error: "bad_payload" }, 400);
-  if (!env.RESEND_API_KEY) return json({ ok: false, error: "resend_not_configured" }, 503);
 
-  const name = fullVisitorName(data);
-  const company = firstOf(data, ["company_name", "company", "organization", "companyName", "website", "domain"]);
-  const email = firstOf(data, ["email", "work_email", "business_email", "workEmail"]);
-  const who = name || company || email || "Website visitor";
-  const subject = `Website visitor — ${who}${company && company !== who ? " · " + company : ""}`;
+  const v = normalizeRb2b(data);
+  const who = v.name || v.company || v.email || "Website visitor";
+  const subject = `Website visitor — ${who}${v.company && v.company !== who ? " · " + v.company : ""}`;
 
-  const res = await sendEmail(env, {
-    to: RB2B_TO,
-    replyTo: email || SALES_EMAIL,
-    subject,
-    html: rb2bHtml(data),
-  }).catch((e) => ({ ok: false, detail: String(e) }));
+  const results = { email: false, hubspot: false };
+  if (env.RESEND_API_KEY) {
+    const r = await sendEmail(env, { to: RB2B_TO, replyTo: v.email || SALES_EMAIL, subject, html: rb2bHtml(v, data) }).catch(() => ({ ok: false }));
+    results.email = r.ok;
+  }
+  if (env.HUBSPOT_TOKEN) {
+    results.hubspot = await upsertRb2bContact(v, env).catch(() => false);
+  }
 
-  return json({ ok: res.ok }, res.ok ? 200 : 502);
-}
-
-function fullVisitorName(d) {
-  const full = firstOf(d, ["full_name", "name", "fullName"]);
-  if (full) return full;
-  return [firstOf(d, ["first_name", "firstName"]), firstOf(d, ["last_name", "lastName"])].filter(Boolean).join(" ");
+  const ok = results.email || results.hubspot;
+  const resp = { ok, results };
+  if (!ok) resp.error = "not_delivered";
+  return json(resp, ok ? 200 : 502);
 }
 
 function firstOf(d, keys) {
@@ -262,20 +259,88 @@ function firstOf(d, keys) {
   return "";
 }
 
-function rb2bHtml(data) {
-  const name = fullVisitorName(data) || "Unknown visitor";
-  const linkedin = firstOf(data, ["linkedin_url", "linkedin", "linkedInUrl", "linkedin_profile"]);
-  const email = firstOf(data, ["email", "work_email", "business_email", "workEmail"]);
+// Map RB2B's fixed Title-Case payload (with snake_case fallbacks) to a normalized shape.
+function normalizeRb2b(d) {
+  const first = firstOf(d, ["First Name", "first_name", "firstName"]);
+  const last = firstOf(d, ["Last Name", "last_name", "lastName"]);
+  return {
+    first,
+    last,
+    name: [first, last].filter(Boolean).join(" ") || firstOf(d, ["name", "full_name"]),
+    title: firstOf(d, ["Title", "title", "job_title"]),
+    company: firstOf(d, ["Company Name", "company_name", "company"]),
+    email: firstOf(d, ["Business Email", "email", "work_email"]),
+    website: firstOf(d, ["Website", "website", "domain"]),
+    linkedin: firstOf(d, ["LinkedIn URL", "linkedin_url", "linkedin"]),
+    industry: firstOf(d, ["Industry", "industry"]),
+    size: firstOf(d, ["Employee Count", "company_size", "employee_count"]),
+    revenue: firstOf(d, ["Estimate Revenue", "revenue"]),
+    city: firstOf(d, ["City", "city"]),
+    state: firstOf(d, ["State", "state", "region"]),
+    zip: firstOf(d, ["Zipcode", "zip", "postal_code"]),
+    page: firstOf(d, ["Captured URL", "page", "page_url", "url"]),
+    referrer: firstOf(d, ["Referrer", "referrer"]),
+    tags: firstOf(d, ["Tags", "tags"]),
+    seenAt: firstOf(d, ["Seen At", "seen_at", "timestamp"]),
+    repeat: d["is_repeat_visit"] === true || d["is_repeat_visitor"] === true,
+  };
+}
+
+// Upsert a HubSpot contact from an RB2B visitor, tagged lead_source = "RB2B".
+async function upsertRb2bContact(v, env) {
+  const marker =
+    "Identified by RB2B (website visitor)." +
+    (v.page ? " Visited: " + v.page : "") +
+    (v.tags ? " · Tags: " + v.tags : "") +
+    (v.linkedin ? " · " + v.linkedin : "") +
+    (v.seenAt ? " · Seen " + v.seenAt : "");
+  const props = { lead_source: "RB2B", message: marker };
+  if (v.email) props.email = v.email;
+  if (v.first) props.firstname = v.first;
+  if (v.last) props.lastname = v.last;
+  if (v.company) props.company = v.company;
+  if (v.title) props.jobtitle = v.title;
+  if (v.website) props.website = v.website;
+  if (v.city) props.city = v.city;
+  if (v.state) props.state = v.state;
+  if (v.zip) props.zip = v.zip;
+
+  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${env.HUBSPOT_TOKEN}` };
+  async function attempt(p) {
+    const body = JSON.stringify({ properties: p });
+    const create = await fetch(`${HS_BASE}/crm/v3/objects/contacts`, { method: "POST", headers, body });
+    if (create.ok) return { ok: true };
+    if (create.status === 409 && p.email) {
+      const upd = await fetch(`${HS_BASE}/crm/v3/objects/contacts/${encodeURIComponent(p.email)}?idProperty=email`, { method: "PATCH", headers, body });
+      return { ok: upd.ok, status: upd.status };
+    }
+    return { ok: false, status: create.status };
+  }
+  let r = await attempt(props);
+  // If the custom lead_source property doesn't exist in the portal, retry without it.
+  if (!r.ok && r.status === 400 && "lead_source" in props) {
+    const { lead_source, ...rest } = props;
+    r = await attempt(rest);
+  }
+  return r.ok;
+}
+
+function rb2bHtml(v, raw) {
+  const name = v.name || "Unknown visitor";
   const rowsData = [
-    ["Title", firstOf(data, ["title", "job_title", "jobTitle"])],
-    ["Company", firstOf(data, ["company_name", "company", "organization", "companyName"])],
-    ["Website", firstOf(data, ["website", "company_website", "domain", "company_domain"])],
-    ["Email", email],
-    ["Phone", firstOf(data, ["phone", "phone_number"])],
-    ["Industry", firstOf(data, ["industry"])],
-    ["Company size", firstOf(data, ["company_size", "employee_count", "employees", "size", "estimated_num_employees"])],
-    ["Location", [firstOf(data, ["city"]), firstOf(data, ["state", "region"])].filter(Boolean).join(", ")],
-    ["Page visited", firstOf(data, ["page", "page_url", "url", "last_page", "trigger_page", "landing_page", "path"])],
+    ["Title", v.title],
+    ["Company", v.company],
+    ["Website", v.website],
+    ["Email", v.email],
+    ["Industry", v.industry],
+    ["Employees", v.size],
+    ["Est. revenue", v.revenue],
+    ["Location", [v.city, v.state, v.zip].filter(Boolean).join(", ")],
+    ["Page visited", v.page],
+    ["Referrer", v.referrer],
+    ["Tags", v.tags],
+    ["Seen at", v.seenAt],
+    ["Repeat visit", v.repeat ? "Yes" : ""],
   ].filter((r) => r[1]);
 
   const rows = rowsData
@@ -290,33 +355,32 @@ function rb2bHtml(data) {
     })
     .join("");
 
-  // Full raw payload, so no field RB2B sends is ever lost.
-  const dump = Object.keys(data)
+  const dump = Object.keys(raw)
     .map((k) => {
-      let v = data[k];
-      if (v && typeof v === "object") v = JSON.stringify(v);
-      v = String(v == null ? "" : v);
-      if (!v) return "";
+      let val = raw[k];
+      if (val && typeof val === "object") val = JSON.stringify(val);
+      val = String(val == null ? "" : val);
+      if (!val) return "";
       return `<tr><td style="padding:5px 0;color:#9AA0A6;width:150px;vertical-align:top;font-family:${FONT};font-size:12px;">${esc(
         k
       )}</td><td style="padding:5px 0;color:#5F5E5A;font-family:${FONT};font-size:12px;line-height:1.4;word-break:break-word;">${esc(
-        v.slice(0, 300)
+        val.slice(0, 300)
       )}</td></tr>`;
     })
     .join("");
 
   const btns =
-    (linkedin
-      ? `<a href="${esc(linkedin)}" style="display:inline-block;margin:0 8px 8px 0;background:#0A66C2;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;padding:11px 20px;border-radius:6px;font-family:${FONT};">View LinkedIn &rarr;</a>`
+    (v.linkedin
+      ? `<a href="${esc(v.linkedin)}" style="display:inline-block;margin:0 8px 8px 0;background:#0A66C2;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;padding:11px 20px;border-radius:6px;font-family:${FONT};">View LinkedIn &rarr;</a>`
       : "") +
-    (email
-      ? `<a href="mailto:${esc(email)}" style="display:inline-block;margin:0 8px 8px 0;background:#DD4E14;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;padding:11px 20px;border-radius:6px;font-family:${FONT};">Email them &rarr;</a>`
+    (v.email
+      ? `<a href="mailto:${esc(v.email)}" style="display:inline-block;margin:0 8px 8px 0;background:#DD4E14;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;padding:11px 20px;border-radius:6px;font-family:${FONT};">Email them &rarr;</a>`
       : "");
 
   const header = `<tr><td style="background:#16181C;padding:20px 28px;">
           <div style="color:#DD4E14;font-size:20px;font-weight:bold;letter-spacing:1px;font-family:${FONT};">WEBSITE VISITOR</div>
           <div style="color:#ffffff;font-size:18px;font-weight:bold;margin-top:6px;font-family:${FONT};">${esc(name)}</div>
-          <div style="color:#9AA0A6;font-size:12px;margin-top:4px;font-family:${FONT};">Identified by RB2B on southernperfection.com</div>
+          <div style="color:#9AA0A6;font-size:12px;margin-top:4px;font-family:${FONT};">Identified by RB2B · saved to HubSpot as an RB2B lead</div>
         </td></tr>`;
 
   const body = `<tr><td style="padding:24px 28px;">
