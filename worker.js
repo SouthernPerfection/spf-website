@@ -75,6 +75,10 @@ export default {
       if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
       return handleRfq(request, env, url.searchParams.get("debug") === "1");
     }
+    if (path === "/api/rb2b") {
+      if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
+      return handleRb2b(request, env, url.searchParams.get("token"));
+    }
     return env.ASSETS.fetch(request);
   },
 };
@@ -194,7 +198,7 @@ async function sendEmail(env, { to, replyTo, subject, html }) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${env.RESEND_API_KEY}`,
     },
-    body: JSON.stringify({ from: FROM, to: [to], reply_to: replyTo, subject, html }),
+    body: JSON.stringify({ from: FROM, to: Array.isArray(to) ? to : [to], reply_to: replyTo, subject, html }),
   });
   return { ok: res.ok, status: res.status, detail: res.ok ? "" : (await safeText(res)) };
 }
@@ -205,6 +209,123 @@ async function safeText(res) {
   } catch {
     return "";
   }
+}
+
+// ---- RB2B website-visitor webhook ---------------------------------------
+// RB2B POSTs an identified visitor here; we email a formatted alert to the team.
+const RB2B_TO = ["tristan.wynn@southernperfection.com", "william.doxey@southernperfection.com"];
+
+async function handleRb2b(request, env, token) {
+  // Optional shared secret: if RB2B_WEBHOOK_TOKEN is set, require ?token= to match.
+  if (env.RB2B_WEBHOOK_TOKEN && token !== env.RB2B_WEBHOOK_TOKEN) {
+    return json({ ok: false, error: "unauthorized" }, 401);
+  }
+  let data;
+  try {
+    data = await request.json();
+  } catch {
+    try {
+      data = Object.fromEntries(new URLSearchParams(await request.text()));
+    } catch {
+      data = null;
+    }
+  }
+  if (!data || typeof data !== "object") return json({ ok: false, error: "bad_payload" }, 400);
+  if (!env.RESEND_API_KEY) return json({ ok: false, error: "resend_not_configured" }, 503);
+
+  const name = fullVisitorName(data);
+  const company = firstOf(data, ["company_name", "company", "organization", "companyName", "website", "domain"]);
+  const email = firstOf(data, ["email", "work_email", "business_email", "workEmail"]);
+  const who = name || company || email || "Website visitor";
+  const subject = `Website visitor — ${who}${company && company !== who ? " · " + company : ""}`;
+
+  const res = await sendEmail(env, {
+    to: RB2B_TO,
+    replyTo: email || SALES_EMAIL,
+    subject,
+    html: rb2bHtml(data),
+  }).catch((e) => ({ ok: false, detail: String(e) }));
+
+  return json({ ok: res.ok }, res.ok ? 200 : 502);
+}
+
+function fullVisitorName(d) {
+  const full = firstOf(d, ["full_name", "name", "fullName"]);
+  if (full) return full;
+  return [firstOf(d, ["first_name", "firstName"]), firstOf(d, ["last_name", "lastName"])].filter(Boolean).join(" ");
+}
+
+function firstOf(d, keys) {
+  for (const k of keys) {
+    if (d[k] != null && String(d[k]).trim() !== "") return String(d[k]).trim();
+  }
+  return "";
+}
+
+function rb2bHtml(data) {
+  const name = fullVisitorName(data) || "Unknown visitor";
+  const linkedin = firstOf(data, ["linkedin_url", "linkedin", "linkedInUrl", "linkedin_profile"]);
+  const email = firstOf(data, ["email", "work_email", "business_email", "workEmail"]);
+  const rowsData = [
+    ["Title", firstOf(data, ["title", "job_title", "jobTitle"])],
+    ["Company", firstOf(data, ["company_name", "company", "organization", "companyName"])],
+    ["Website", firstOf(data, ["website", "company_website", "domain", "company_domain"])],
+    ["Email", email],
+    ["Phone", firstOf(data, ["phone", "phone_number"])],
+    ["Industry", firstOf(data, ["industry"])],
+    ["Company size", firstOf(data, ["company_size", "employee_count", "employees", "size", "estimated_num_employees"])],
+    ["Location", [firstOf(data, ["city"]), firstOf(data, ["state", "region"])].filter(Boolean).join(", ")],
+    ["Page visited", firstOf(data, ["page", "page_url", "url", "last_page", "trigger_page", "landing_page", "path"])],
+  ].filter((r) => r[1]);
+
+  const rows = rowsData
+    .map((r, i) => {
+      const border = i < rowsData.length - 1 ? "border-bottom:1px solid #EDEAE3;" : "";
+      const valColor = r[0] === "Email" ? "#1F3864" : "#16181C";
+      return `<tr><td style="padding:9px 0;color:#6F7782;width:120px;vertical-align:top;${border}font-family:${FONT};font-size:14px;">${esc(
+        r[0]
+      )}</td><td style="padding:9px 0;color:${valColor};${border}font-family:${FONT};font-size:14px;line-height:1.5;word-break:break-word;">${esc(
+        r[1]
+      )}</td></tr>`;
+    })
+    .join("");
+
+  // Full raw payload, so no field RB2B sends is ever lost.
+  const dump = Object.keys(data)
+    .map((k) => {
+      let v = data[k];
+      if (v && typeof v === "object") v = JSON.stringify(v);
+      v = String(v == null ? "" : v);
+      if (!v) return "";
+      return `<tr><td style="padding:5px 0;color:#9AA0A6;width:150px;vertical-align:top;font-family:${FONT};font-size:12px;">${esc(
+        k
+      )}</td><td style="padding:5px 0;color:#5F5E5A;font-family:${FONT};font-size:12px;line-height:1.4;word-break:break-word;">${esc(
+        v.slice(0, 300)
+      )}</td></tr>`;
+    })
+    .join("");
+
+  const btns =
+    (linkedin
+      ? `<a href="${esc(linkedin)}" style="display:inline-block;margin:0 8px 8px 0;background:#0A66C2;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;padding:11px 20px;border-radius:6px;font-family:${FONT};">View LinkedIn &rarr;</a>`
+      : "") +
+    (email
+      ? `<a href="mailto:${esc(email)}" style="display:inline-block;margin:0 8px 8px 0;background:#DD4E14;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;padding:11px 20px;border-radius:6px;font-family:${FONT};">Email them &rarr;</a>`
+      : "");
+
+  const header = `<tr><td style="background:#16181C;padding:20px 28px;">
+          <div style="color:#DD4E14;font-size:20px;font-weight:bold;letter-spacing:1px;font-family:${FONT};">WEBSITE VISITOR</div>
+          <div style="color:#ffffff;font-size:18px;font-weight:bold;margin-top:6px;font-family:${FONT};">${esc(name)}</div>
+          <div style="color:#9AA0A6;font-size:12px;margin-top:4px;font-family:${FONT};">Identified by RB2B on southernperfection.com</div>
+        </td></tr>`;
+
+  const body = `<tr><td style="padding:24px 28px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;">${rows}</table>
+          <div style="margin-top:20px;">${btns}</div>
+          ${dump ? `<div style="margin-top:22px;border-top:1px solid #EDEAE3;padding-top:14px;"><div style="color:#9AA0A6;font-size:11px;font-weight:bold;letter-spacing:1px;font-family:${FONT};margin-bottom:8px;">ALL DATA RECEIVED</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;">${dump}</table></div>` : ""}
+        </td></tr>`;
+
+  return emailShell(header, body, BRAND_FOOTER);
 }
 
 // Shared email chrome: 560px white card on a paper backdrop, table-based so it
