@@ -36,7 +36,8 @@ NAV = """  <a class="skip-link" href="#main">Skip to content</a>
         <ul class="mega">
           <li class="mega-item"><a class="mega-top" href="/returnable-packaging/">Returnable Packaging</a>
             <div class="mega-panel"><div class="mega-cols">
-              <div class="mega-col"><p class="mega-h">Steel Racks &amp; Containers</p><ul>
+              <div class="mega-col"><p class="mega-h">Racks &amp; Containers</p><ul>
+                <li><a href="/returnable-steel-racks/">Returnable Steel Racks</a></li>
                 <li><a href="/automotive-racks/">Automotive Racks</a></li>
                 <li><a href="/stack-racks/">Stack Racks</a></li>
                 <li><a href="/steel-pallets/">Steel Pallets</a></li>
@@ -47,21 +48,26 @@ NAV = """  <a class="skip-link" href="#main">Skip to content</a>
                 <li><a href="/industrial-dollies/">Industrial Dollies</a></li>
                 <li><a href="/kanban-flow-racks/">Kanban Flow Racks</a></li>
                 <li><a href="/steel-cable-reels/">Steel Cable Reels</a></li>
+                <li><a href="/wip-carts/">WIP Carts</a></li>
               </ul></div>
-              <div class="mega-col"><p class="mega-h">Custom &amp; Service</p><ul>
-                <li><a href="/weldments-frames/">Weldments &amp; Frames</a></li>
-                <li><a href="/guards-platforms/">Guards &amp; Platforms</a></li>
+              <div class="mega-col"><p class="mega-h">Dunnage &amp; Service</p><ul>
                 <li><a href="/dunnage/">Dunnage</a></li>
                 <li><a href="/custom-foam-inserts/">Custom Foam Inserts</a></li>
                 <li><a href="/rack-repair-refurbishment/">Rack Repair &amp; Refurb</a></li>
               </ul></div>
-              <div class="mega-col"><p class="mega-h">Custom Manufacturing</p><ul>
+            </div></div>
+          </li>
+          <li class="mega-item"><a class="mega-top" href="/custom-manufacturing/">Custom Manufacturing</a>
+            <div class="mega-panel"><div class="mega-cols">
+              <div class="mega-col"><p class="mega-h">Fabrication</p><ul>
                 <li><a href="/capabilities/">Contract Manufacturing</a></li>
+                <li><a href="/weldments-frames/">Weldments &amp; Frames</a></li>
+                <li><a href="/sheet-metal-fabrication/">Sheet Metal Fabrication</a></li>
+                <li><a href="/high-volume-manufacturing/">High-Volume Manufacturing</a></li>
+              </ul></div>
+              <div class="mega-col"><p class="mega-h">Structures &amp; Guards</p><ul>
                 <li><a href="/industrial-structures/">Industrial Structures</a></li>
-                <li><a href="/high-volume-manufacturing/">High-Volume</a></li>
-                <li><a href="/guards-platforms/">Machine Guards</a></li>
-                <li><a href="/sheet-metal-fabrication/">Sheet Metal</a></li>
-                <li><a href="/capabilities/laser-cutting/">Laser Cutting</a></li>
+                <li><a href="/guards-platforms/">Guards &amp; Platforms</a></li>
               </ul></div>
             </div></div>
           </li>
@@ -666,9 +672,101 @@ def build_locations():
     print("wrote locations/index.html")
 
 # ---------------------------------------------------------------- run
+def build_custom_manufacturing():
+    canonical = "https://southernperfection.com/custom-manufacturing/"
+    title = "Custom Metal Fabrication &amp; Contract Manufacturing | Southern Perfection Fabrication"
+    desc = ("Custom metal fabrication and contract manufacturing under one roof in Byron, GA — weldments, "
+            "industrial steel structures, sheet metal, machine guards & high-volume production. Laser, forming, "
+            "robotic welding, machining & powder coat. ISO 9001, CAGE 2W654. Build to print.")
+    faqs = [
+        ("Do you do contract manufacturing and build to print?", "Yes — build-to-print contract manufacturing is core to what we do. Send a drawing, CAD, or a sample and we'll quote and produce it, from one-off weldments to high-volume runs, under one roof in Byron, GA."),
+        ("What can you fabricate?", "Weldments and frames, industrial steel structures, sheet metal parts, machine guards and platforms, and high-volume fabricated assemblies. We laser-cut, form (press brake to 230 tons), CNC-machine, robotic-weld, and powder-coat in-house."),
+        ("What certifications do you hold?", "ISO 9001 quality management and CAGE Code 2W654 for defense and government work, with in-house inspection including CMM."),
+        ("Can you handle high-volume production?", "Yes. With 30+ MIG stations plus FANUC robotic welding and one of the Southeast's largest powder-coat ovens, we run repeatable high-volume production while holding tolerance and finish."),
+    ]
+    schema = [
+        {"@context":"https://schema.org","@graph":[
+            {"@type":"BreadcrumbList","itemListElement":[
+                {"@type":"ListItem","position":1,"name":"Home","item":"https://southernperfection.com/"},
+                {"@type":"ListItem","position":2,"name":"Custom Manufacturing","item":canonical}]},
+            {"@type":"Service","name":"Custom Metal Fabrication & Contract Manufacturing","serviceType":"Weldments, structures, sheet metal, machine guards & high-volume production","provider":{"@type":"Organization","name":"Southern Perfection Fabrication","telephone":"+1-478-956-4442","address":{"@type":"PostalAddress","streetAddress":"232 Hwy 49 S","addressLocality":"Byron","addressRegion":"GA","postalCode":"31008","addressCountry":"US"}},"areaServed":"United States"}
+        ]},
+        {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+            {"@type":"Question","name":q,"acceptedAnswer":{"@type":"Answer","text":a}} for q,a in faqs]}
+    ]
+    faq_html = "\n".join(f'          <details><summary>{q}</summary><p>{a}</p></details>' for q,a in faqs)
+    body = f"""    <section class="hero" aria-labelledby="h">
+      <div class="wrap hero-split"><div class="hero-copy">
+        <p class="eyebrow"><a href="/" style="color:inherit">Home</a> · Custom Manufacturing</p>
+        <h1 id="h">Custom metal fabrication &amp; contract manufacturing.</h1>
+        <p class="lede">Beyond returnable packaging, Southern Perfection Fabrication is a full-service <strong>custom metal fabricator and contract manufacturer</strong> — weldments, industrial structures, sheet metal, machine guards, and high-volume production, engineered and built to your print under one roof in Byron, GA. Send a drawing or a sample and we’ll quote it.</p>
+        <div class="hero-actions"><a href="/#rfq" class="btn btn-spark btn-lg">Start an RFQ →</a><a href="/capabilities/" class="btn btn-ghost btn-lg">See capabilities</a></div>
+      </div><div class="hero-media"><img src="/assets/photos/metal-fabrication-shop.jpg" alt="Custom metal fabrication and contract manufacturing at Southern Perfection Fabrication in Byron, GA" width="1500" loading="eager" fetchpriority="high"></div></div>
+    </section>
+
+    <section class="section"><div class="wrap article-body">
+      <p class="kicker">Custom manufacturing</p>
+      <h2>One-roof contract manufacturing, built to print.</h2>
+      <p>From a single prototype to a high-volume production run, we take your drawing, CAD, or sample and turn it into finished, inspected steel. Design (in-house SolidWorks), laser and plasma cutting, CNC forming to 230 tons, CNC machining, 30+ MIG stations plus FANUC robotic welding, and powder coating all happen <a href="/capabilities/">under one roof</a> — one vendor, one PO, one accountable partner since 1982.</p>
+    </div></section>
+
+    <section class="section section-paper">
+      <div class="wrap">
+        <p class="kicker">What we build</p>
+        <h2>Custom fabrication, end to end.</h2>
+        <div class="cards-4">
+          <article class="card"><h3><a href="/capabilities/">Contract Manufacturing</a></h3><p>Build-to-print production of your parts and assemblies, one-off to high volume.</p></article>
+          <article class="card"><h3><a href="/weldments-frames/">Weldments &amp; Frames</a></h3><p>Precision welded frames, bases, and structures to your drawing.</p></article>
+          <article class="card"><h3><a href="/industrial-structures/">Industrial Structures</a></h3><p>Mezzanines, platforms, and heavy structural steel fabrication.</p></article>
+          <article class="card"><h3><a href="/sheet-metal-fabrication/">Sheet Metal Fabrication</a></h3><p>Precision sheet metal parts, enclosures, and brackets.</p></article>
+          <article class="card"><h3><a href="/guards-platforms/">Machine Guards &amp; Platforms</a></h3><p>Safety guarding, access platforms, and mezzanines to spec.</p></article>
+          <article class="card"><h3><a href="/high-volume-manufacturing/">High-Volume Production</a></h3><p>Repeatable, robotic-welded runs that hold tolerance and finish.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <p class="kicker">Why SPF</p>
+        <h2>The one-roof fabricator OEMs standardize on.</h2>
+        <div class="cards-4">
+          <article class="card"><h3>One Roof</h3><p>Design, cutting, forming, machining, welding &amp; finishing in-house — one vendor, one PO.</p></article>
+          <article class="card"><h3>ISO 9001 / CAGE</h3><p>ISO 9001 quality and CAGE 2W654 with in-house CMM inspection.</p></article>
+          <article class="card"><h3>230-Ton + Robotic</h3><p>Press-brake forming to 230 tons; 30+ MIG stations plus FANUC robotic welding.</p></article>
+          <article class="card"><h3>Powder Coat</h3><p>One of the largest powder-coat ovens in the Southeast for a finish that lasts.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-paper"><div class="wrap article-body">
+      <p class="kicker">Capabilities</p>
+      <h2>Every process, in-house.</h2>
+      <p>Explore the full shop: <a href="/capabilities/laser-cutting/">laser &amp; plasma cutting</a>, <a href="/capabilities/forming/">CNC forming &amp; bending</a>, <a href="/capabilities/cnc-machining/">CNC machining</a>, <a href="/capabilities/robotic-welding/">robotic welding</a>, <a href="/capabilities/powder-coating/">powder coating &amp; finishing</a>, <a href="/capabilities/design-engineering/">design &amp; engineering</a>, and <a href="/capabilities/quality-inspection/">quality &amp; inspection</a>. See <a href="/capabilities/">all capabilities</a>, or our returnable side at <a href="/returnable-packaging/">returnable packaging</a>.</p>
+    </div></section>
+
+    <section class="section">
+      <div class="wrap">
+        <p class="kicker">FAQ</p>
+        <h2>Custom manufacturing — answered.</h2>
+        <div class="faq">
+{faq_html}
+        </div>
+      </div>
+    </section>
+"""
+    html = page(title, desc, canonical, schema, body,
+                "Have a print that needs a fabricator?",
+                "Send a drawing or a sample — we’ll quote it and build it under one roof.")
+    os.makedirs("custom-manufacturing", exist_ok=True)
+    with open("custom-manufacturing/index.html", "w") as f:
+        f.write(html)
+    print("wrote custom-manufacturing/index.html")
+
+
 if __name__ == "__main__":
     build_pillar()
+    build_custom_manufacturing()
     for c in CITIES:
         build_city(c)
     build_locations()
-    print(f"\nDONE: 1 pillar + {len(CITIES)} city pages + 1 locations hub = {len(CITIES)+2} pages")
+    print(f"\nDONE: 2 pillars + {len(CITIES)} city pages + 1 locations hub = {len(CITIES)+3} pages")
