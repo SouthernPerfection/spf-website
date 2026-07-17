@@ -95,7 +95,7 @@ strong { font-weight: 700; }
 .brand-mark { width: 20px; height: 20px; background: var(--spark); display: inline-block; border-radius: 2px; }
 .brand-text { font-family: var(--font-mono); font-weight: 500; letter-spacing: 1.5px; font-size: .82rem; color: var(--ink); }
 .brand-logo { height: 42px; width: auto; display: block; filter: brightness(0) invert(1); }
-.nav { margin-left: 1.75rem; }
+.nav { margin-left: 1rem; }
 .nav-list { list-style: none; display: flex; gap: 1.4rem; margin: 0; padding: 0; }
 .nav-list a { color: var(--ink); font-weight: 600; font-size: .95rem; }
 .nav-list a:hover { color: var(--spark); text-decoration: none; }
@@ -300,9 +300,9 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--spark); out
 .nav { display: flex; align-items: center; }
 .nav-cb { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .nav-burger { display: none; }
-.mega { display: flex; gap: 1.7rem; align-items: center; list-style: none; margin: 0; padding: 0; }
+.mega { display: flex; gap: 1.15rem; align-items: center; list-style: none; margin: 0; padding: 0; }
 .mega-item { position: relative; }
-.mega-top { display: inline-block; color: #fff; font-weight: 600; font-size: .92rem; padding: .65rem 0; cursor: pointer; text-decoration: none; white-space: nowrap; }
+.mega-top { display: inline-block; color: #fff; font-weight: 600; font-size: .88rem; padding: .65rem 0; cursor: pointer; text-decoration: none; white-space: nowrap; }
 a.mega-top:hover, .mega-item:hover > .mega-top, .mega-item:focus-within > .mega-top { color: var(--spark); text-decoration: none; }
 .mega-panel {
   position: absolute; top: 100%; left: -1rem; margin: 0; padding: 1.15rem 1.35rem;
