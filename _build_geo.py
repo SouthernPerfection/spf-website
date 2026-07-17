@@ -130,7 +130,7 @@ NAV = """  <a class="skip-link" href="#main">Skip to content</a>
           </li>
         </ul>
       </nav>
-      <div class="header-cta"><a href="tel:+14789564442" class="phone">478-956-4442</a><a href="/#rfq" class="btn btn-spark">Start an RFQ</a></div>
+      <div class="header-cta"><a href="/#rfq" class="btn btn-spark">Start an RFQ</a></div>
     </div>
   </header>"""
 
@@ -522,6 +522,79 @@ CITIES = [
                 ("Truck, Bus &amp; Powertrain","Sequencing and shipping racks for drivetrain and engine parts.","/industries/transportation-trailer/"),
                 ("EV &amp; Battery","Dunnage and racks for heavy, sensitive cells and trays.","/industries/ev-battery/")],
   "prods":['automotive-racks','engine-racks','bumper-racks','returnable-steel-racks']},
+
+ # ---- Tier 3 (curated) ----
+ {"slug":"kokomo-in","city":"Kokomo","state":"IN","metro":"Kokomo, IN","home":False,
+  "freight":"about a day by truck","miles":"roughly 560 miles","photo":"automotive-returnable-racks.jpg",
+  "intro":"Kokomo is a concentrated automotive and EV/battery town — OEM assembly, Tier-1 supply, and new battery production. From Byron, GA we design and freight returnable automotive racks, dunnage, and battery-tray protection into the Kokomo metro.",
+  "industries":[("Automotive OEM &amp; Tier-1","Line-side and shipping racks built to your print.","/industries/automotive/"),
+                ("EV &amp; Battery","Dunnage and racks for heavy, sensitive cells and trays.","/industries/ev-battery/"),
+                ("General Manufacturing","Custom returnable packaging for any repeatable Central Indiana line.","/industries/general-industrial/"),
+                ("Industrial Machinery","Racks and weldments for machinery and OEM components.","/industries/industrial-machinery/")],
+  "prods":['automotive-racks','returnable-steel-racks','dunnage','custom-foam-inserts']},
+
+ {"slug":"lafayette-in","city":"Lafayette","state":"IN","metro":"Lafayette, IN","home":False,
+  "freight":"about a day by truck","miles":"roughly 580 miles","photo":"automotive-shipping-racks.jpg",
+  "intro":"Lafayette blends automotive assembly with heavy-equipment and powertrain manufacturing. From Byron, GA we build and freight returnable steel racks, automotive racks, and engine racks into the Lafayette metro.",
+  "industries":[("Automotive OEM","Line-side, sequencing, and shipping racks built to your print.","/industries/automotive/"),
+                ("Heavy Equipment","Rugged racks for large castings and off-highway components.","/industries/heavy-equipment/"),
+                ("Truck, Bus &amp; Powertrain","Sequencing and shipping racks for drivetrain and engine parts.","/industries/transportation-trailer/"),
+                ("General Manufacturing","Custom returnable packaging for any repeatable Indiana line.","/industries/general-industrial/")],
+  "prods":['automotive-racks','returnable-steel-racks','engine-racks','dunnage']},
+
+ {"slug":"fort-wayne-in","city":"Fort Wayne","state":"IN","metro":"Fort Wayne, IN","home":False,
+  "freight":"about a day by truck","miles":"roughly 600 miles","photo":"automotive-returnable-racks.jpg",
+  "intro":"Fort Wayne pairs automotive assembly with a deep industrial and power-equipment base. From Byron, GA we design and freight returnable automotive racks, dunnage, and industrial carts into the Fort Wayne metro.",
+  "industries":[("Automotive OEM","Line-side and shipping racks for truck and vehicle assembly.","/industries/automotive/"),
+                ("Industrial / Power / Electrical","Racks and reels for heavy electrical and power equipment.","/industries/energy-power/"),
+                ("General Manufacturing","Custom returnable packaging for any repeatable Northeast Indiana line.","/industries/general-industrial/"),
+                ("Distribution &amp; Logistics","Reusable racks and pallets that standardize how parts move.","/industries/distribution-logistics/")],
+  "prods":['automotive-racks','returnable-steel-racks','dunnage','industrial-carts']},
+
+ {"slug":"bowling-green-ky","city":"Bowling Green","state":"KY","metro":"Bowling Green, KY","home":False,
+  "freight":"about 5 hours by truck","miles":"roughly 320 miles","photo":"automotive-shipping-racks.jpg",
+  "intro":"Bowling Green is automotive and EV/battery country — vehicle assembly plus fast-growing battery production. From Byron, GA we’re a short freight lane away with returnable automotive racks, dunnage, and battery-tray protection.",
+  "industries":[("Automotive OEM","Line-side, sequencing, and shipping racks built to your print.","/industries/automotive/"),
+                ("EV &amp; Battery","Dunnage and racks for heavy, sensitive cells and trays.","/industries/ev-battery/"),
+                ("General Manufacturing","Custom returnable packaging for any repeatable South-Central Kentucky line.","/industries/general-industrial/"),
+                ("Appliance &amp; HVAC","Protective racks and containers for finished units and components.",None)],
+  "prods":['automotive-racks','returnable-steel-racks','dunnage','custom-foam-inserts']},
+
+ {"slug":"spring-hill-tn","city":"Spring Hill","state":"TN","metro":"Spring Hill, TN","home":False,
+  "freight":"about 4½ hours by truck","miles":"roughly 290 miles","photo":"automotive-returnable-racks.jpg",
+  "intro":"Spring Hill is a major automotive and EV/battery hub in Middle Tennessee. From Byron, GA we’re a short freight lane away with returnable automotive racks, dunnage, and battery packaging built to your loop.",
+  "industries":[("Automotive OEM","Line-side, sequencing, and shipping racks built to your print.","/industries/automotive/"),
+                ("EV &amp; Battery","Dunnage and racks for heavy, sensitive cells and trays.","/industries/ev-battery/"),
+                ("General Manufacturing","Custom returnable packaging for any repeatable Middle Tennessee line.","/industries/general-industrial/"),
+                ("Automotive Tier-1","Returnable racks and dunnage that index each part for the plant.","/industries/automotive/")],
+  "prods":['automotive-racks','returnable-steel-racks','dunnage','custom-foam-inserts']},
+
+ {"slug":"toledo-oh","city":"Toledo","state":"OH","metro":"Toledo, OH","home":False,
+  "freight":"about 10 hours by truck","miles":"roughly 650 miles","photo":"automotive-shipping-racks.jpg",
+  "intro":"Toledo is a classic automotive assembly town with a strong building-products base. From Byron, GA we build and freight returnable automotive racks, stack racks, and dunnage into the Toledo metro.",
+  "industries":[("Automotive OEM","Line-side and shipping racks for vehicle assembly.","/industries/automotive/"),
+                ("Furniture &amp; Building Products","Protective racks and dunnage for large, finished goods.",None),
+                ("General Manufacturing","Custom returnable packaging for any repeatable Northwest Ohio line.","/industries/general-industrial/"),
+                ("Distribution &amp; Logistics","Reusable racks and pallets that standardize how parts move.","/industries/distribution-logistics/")],
+  "prods":['automotive-racks','returnable-steel-racks','dunnage','stack-racks']},
+
+ {"slug":"racine-wi","city":"Racine","state":"WI","metro":"Racine, WI","home":False,
+  "freight":"about a day and a half by truck","miles":"roughly 810 miles","photo":"heavy-equipment.jpg",
+  "intro":"Racine has a deep heavy-equipment, appliance, and consumer-products manufacturing base. From Byron, GA we build and freight returnable steel racks, weldments, and containers into the Racine metro.",
+  "industries":[("Heavy Equipment","Rugged racks for large castings, weldments, and off-highway parts.","/industries/heavy-equipment/"),
+                ("Appliance &amp; HVAC","Protective racks and containers for finished units and components.",None),
+                ("Food, Beverage &amp; CPG","Washable steel containers and racks for high-volume lines.","/industries/food-beverage-dairy/"),
+                ("General Manufacturing","Custom returnable packaging for any repeatable Southeast Wisconsin line.","/industries/general-industrial/")],
+  "prods":['returnable-steel-racks','weldments-frames','industrial-carts','returnable-containers']},
+
+ {"slug":"rocky-mount-nc","city":"Rocky Mount","state":"NC","metro":"Rocky Mount, NC","home":False,
+  "freight":"about 6 hours by truck","miles":"roughly 400 miles","photo":"heavy-equipment.jpg",
+  "intro":"Rocky Mount pairs heavy-equipment and engine manufacturing with pharmaceutical and medical production. From Byron, GA we design and freight returnable steel racks, engine racks, and containers into the Rocky Mount metro.",
+  "industries":[("Heavy Equipment","Rugged racks for large castings, engines, and off-highway parts.","/industries/heavy-equipment/"),
+                ("Pharma &amp; Medical Device","Clean, traceable dunnage and containers for regulated products.",None),
+                ("Truck, Bus &amp; Powertrain","Sequencing and shipping racks for drivetrain and engine parts.","/industries/transportation-trailer/"),
+                ("General Manufacturing","Custom returnable packaging for any repeatable Eastern North Carolina line.","/industries/general-industrial/")],
+  "prods":['returnable-steel-racks','engine-racks','dunnage','returnable-containers']},
 ]
 
 # ---------------------------------------------------------------- CITY PAGES
