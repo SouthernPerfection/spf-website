@@ -32,14 +32,23 @@
 
   /* ---------- styles ---------- */
   var css =
-    /* footer band */
-    ".spf-nl-band{background:radial-gradient(120% 160% at 100% 0%,#1F3864 0%,#16181C 58%);color:#F3F1EC;padding:40px 20px;font-family:'IBM Plex Sans',system-ui,sans-serif}" +
-    ".spf-nl-band .in{max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:16px 40px;justify-content:space-between}" +
-    ".spf-nl-band .k{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#DD4E14;font-weight:600;margin-bottom:6px}" +
-    ".spf-nl-band h3{font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:1px;font-size:30px;margin:0 0 4px;color:#fff;line-height:1}" +
-    ".spf-nl-band p{margin:0;font-size:14px;color:#B9BDC4;max-width:560px}" +
-    ".spf-nl-band .sub{background:#DD4E14;color:#fff;border:0;border-radius:7px;padding:14px 26px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}" +
-    ".spf-nl-band .sub:hover{background:#c4440f}" +
+    /* footer newsletter section — light cream band, distinct from the dark footer, inline form */
+    ".spf-nl-band{background:#F3F1EC;color:#16181C;padding:48px 20px;border-top:3px solid #DD4E14;font-family:'IBM Plex Sans',system-ui,sans-serif}" +
+    ".spf-nl-band .in{max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:20px 44px;justify-content:space-between}" +
+    ".spf-nl-band .txt{flex:1 1 380px}" +
+    ".spf-nl-band .k{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#DD4E14;font-weight:600;margin-bottom:7px}" +
+    ".spf-nl-band h3{font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:1px;font-size:32px;margin:0 0 6px;color:#16181C;line-height:1}" +
+    ".spf-nl-band p{margin:0;font-size:14px;color:#6F7782;max-width:560px;line-height:1.5}" +
+    ".spf-nl-form{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}" +
+    ".spf-nl-form input{border:1px solid #D8D4CA;background:#fff;color:#16181C;border-radius:7px;padding:13px 15px;font-size:14px;font-family:inherit;min-width:240px}" +
+    ".spf-nl-form input:focus{outline:2px solid #DD4E14;outline-offset:1px;border-color:#DD4E14}" +
+    ".spf-nl-form button{background:#DD4E14;color:#fff;border:0;border-radius:7px;padding:13px 24px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}" +
+    ".spf-nl-form button:hover{background:#c4440f}" +
+    ".spf-nl-form button:disabled{opacity:.7;cursor:default}" +
+    ".spf-nl-msg{flex-basis:100%;font-size:13px;margin-top:3px;color:#c4440f}" +
+    ".spf-nl-done{border-left:3px solid #DD4E14;padding-left:15px;min-width:260px}" +
+    ".spf-nl-done .big{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#16181C;letter-spacing:.5px;line-height:1}" +
+    ".spf-nl-done p{margin:5px 0 0;color:#3c3f45;font-size:14px}" +
     /* overlay + card */
     ".spf-m-ov{position:fixed;inset:0;background:rgba(9,11,14,.6);backdrop-filter:blur(3px);z-index:99998;display:none;align-items:center;justify-content:center;padding:18px;opacity:0;transition:opacity .18s}" +
     ".spf-m-ov.show{opacity:1}" +
@@ -59,10 +68,10 @@
     ".spf-m button.go:hover{background:#c4440f}" +
     ".spf-m button.go:disabled{opacity:.7;cursor:default}" +
     ".spf-m .fine{font-size:11.5px;color:#6F7782;text-align:center;margin:11px 0 0;line-height:1.5}" +
-    ".spf-m .msg{font-size:13.5px;margin-top:10px;text-align:center;color:#0f7b6c}" +
+    ".spf-m .msg{font-size:13.5px;margin-top:10px;text-align:center;color:#c4440f}" +
     ".spf-m .msg.err{color:#c4440f}" +
-    ".spf-m .done{text-align:center;padding:6px 0 2px}" +
-    ".spf-m .done .big{font-family:'Bebas Neue',sans-serif;font-size:26px;color:#16181C;letter-spacing:.5px}" +
+    ".spf-m .done{padding:2px 0 2px 15px;border-left:3px solid #DD4E14}" +
+    ".spf-m .done .big{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#16181C;letter-spacing:.5px;line-height:1}" +
     ".spf-m .done p{color:#3c3f45;font-size:13.5px;margin:6px 0 0}" +
     ".spf-m .done a.dl{display:inline-block;margin-top:12px;color:#fff;background:#1F3864;text-decoration:none;font-weight:700;font-size:13.5px;padding:10px 18px;border-radius:7px}";
   var st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
@@ -158,18 +167,41 @@
     doneLink: '<a class="dl" href="'+ROI_URL+'">See the ROI calculator &rarr;</a>'
   });
 
-  /* ---------- footer band (button opens the newsletter modal) ---------- */
+  /* ---------- footer newsletter section (own cream band, inline form) ---------- */
   function buildBand(){
     var band = document.createElement("section");
     band.className = "spf-nl-band";
     band.setAttribute("aria-label","Subscribe to The Returnable Report");
     band.innerHTML =
       '<div class="in">' +
-        '<div><div class="k">Newsletter</div>' +
+        '<div class="txt"><div class="k">Newsletter &middot; monthly</div>' +
           '<h3>Get The Returnable Report</h3>' +
           '<p>One useful email a month for people who ship parts and pay for packaging &mdash; a customer story, a shop capability, and a practical tip. No spam.</p></div>' +
-        '<button type="button" class="sub" data-nl-open>Subscribe &rarr;</button>' +
+        '<form class="spf-nl-form" novalidate>' +
+          '<input type="email" name="email" placeholder="Work email" autocomplete="email" required>' +
+          '<button type="submit">Subscribe &rarr;</button>' +
+          '<div class="spf-nl-msg" hidden></div>' +
+        '</form>' +
       '</div>';
+    var form = band.querySelector("form");
+    var msg = band.querySelector(".spf-nl-msg");
+    form.addEventListener("submit", function(e){
+      e.preventDefault();
+      var email = form.email.value.trim();
+      if(!validEmail(email)){ msg.hidden=false; msg.textContent="Please enter a valid email."; return; }
+      var btn = form.querySelector("button"); btn.disabled=true; btn.textContent="…";
+      var a = attribution("footer");
+      post({ email: email, type:"newsletter", source_page:a.source_page, landing_page:a.landing_page }).then(function(ok){
+        if(ok){
+          lsSet("spf_subscribed","1");
+          fireLead("Newsletter","footer");
+          form.outerHTML = '<div class="spf-nl-done"><div class="big">You\'re in.</div><p>Check your inbox to confirm &mdash; talk soon.</p></div>';
+        } else {
+          btn.disabled=false; btn.innerHTML="Subscribe &rarr;";
+          msg.hidden=false; msg.textContent="Something went wrong — email sales@southernperfection.com and we'll add you.";
+        }
+      });
+    });
     var footer = document.querySelector(".site-footer");
     if(footer && footer.parentNode) footer.parentNode.insertBefore(band, footer);
     else document.body.appendChild(band);
