@@ -79,18 +79,7 @@ export default {
       if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
       return handleRb2b(request, env, url.searchParams.get("token"));
     }
-    // Serve the static asset; inject Clarity into HTML responses site-wide.
-    const assetRes = await env.ASSETS.fetch(request);
-    if (!(assetRes.headers.get("content-type") || "").includes("text/html")) {
-      return assetRes;
-    }
-    return new HTMLRewriter()
-      .on("head", {
-        element(el) {
-          el.append(CLARITY_TAG, { html: true });
-        },
-      })
-      .transform(assetRes);
+    return env.ASSETS.fetch(request);
   },
 };
 
@@ -102,11 +91,6 @@ const FROM = "Southern Perfection Fabrication <sales@southernperfection.com>";
 // self-send (which Resend previously auto-suppressed). Same verified domain, no
 // mailbox needed — replies route to reply_to (the prospect), not here.
 const ALERT_FROM = "SPF Website <notifications@southernperfection.com>";
-
-// Microsoft Clarity (heatmaps + session recordings). Injected site-wide via the
-// HTMLRewriter below so it lands on every HTML page from one place.
-const CLARITY_TAG =
-  '<script type="text/javascript">(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "xoinpowe8z");</script>';
 
 async function handleRfq(request, env, debug) {
   let data;

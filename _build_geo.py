@@ -24,6 +24,7 @@ ANALYTICS = """  <!-- ANALYTICS -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7NE6WQG77Y"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-7NE6WQG77Y');</script>
   <script>document.addEventListener('DOMContentLoaded',function(){var s=document.getElementById('rfqSuccess');if(!s)return;new MutationObserver(function(){if(!s.hidden&&window.gtag){gtag('event','generate_lead',{event_category:'RFQ',event_label:location.pathname});}}).observe(s,{attributes:true,attributeFilter:['hidden']});});</script>
+  <script type="text/javascript">(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "xoinpowe8z");</script>
   <!-- /ANALYTICS -->"""
 
 NAV = """  <a class="skip-link" href="#main">Skip to content</a>
