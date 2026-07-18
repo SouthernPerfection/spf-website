@@ -223,15 +223,20 @@
       form.hidden = true;
       var s = document.getElementById('lmSuccess'); s.hidden = false;
       s.scrollIntoView({behavior:'smooth', block:'center'});
+      if(window.gtag){ gtag('event','generate_lead',{event_category:'Lead Magnet', event_label:'spec-guide'}); }
     }
     form.addEventListener('submit', function(e){
       e.preventDefault();
       if(!form.checkValidity()){ form.reportValidity(); return; }
       var name = val('lm-name'); var parts = name.split(/\s+/);
+      var ss; try{ ss=window.sessionStorage; }catch(err){}
       var payload = {
         firstname: parts.shift() || '', lastname: parts.join(' '),
         company: val('lm-company'), email: val('lm-email'),
-        message: 'Downloaded lead magnet: How to Spec a Returnable Rack'
+        message: 'Downloaded lead magnet: How to Spec a Returnable Rack',
+        type: 'lead_magnet',
+        source_page: (ss && (ss.getItem('spf_source') || ss.getItem('spf_landing'))) || location.pathname,
+        landing_page: (ss && ss.getItem('spf_landing')) || location.pathname
       };
       statusEl.textContent = 'One sec…'; statusEl.className = 'form-status';
       // Best-effort capture; never block the download.

@@ -112,6 +112,8 @@ async function handleRfq(request, env, debug) {
 
   // Lead-source attribution (page the RFQ CTA was clicked from + session landing page).
   const meta = { source_page: str(data.source_page), landing_page: str(data.landing_page) };
+  // Lead-magnet (gated spec-guide) submissions are lower-intent than RFQs — treat them distinctly.
+  const isLM = str(data.type) === "lead_magnet";
 
   const results = { hubspot: false, notify: false, confirm: false };
   let notifyRes = { ok: false, skipped: true };
@@ -127,16 +129,18 @@ async function handleRfq(request, env, debug) {
     notifyRes = await sendEmail(env, {
       to: NOTIFY_EMAIL,
       replyTo: email,
-      subject: `New RFQ — ${p.company || fullName(p) || email}`,
-      html: internalHtml(p, meta),
+      subject: `${isLM ? "New guide download" : "New RFQ"} — ${p.company || fullName(p) || email}`,
+      html: internalHtml(p, meta, isLM),
     }).catch((e) => ({ ok: false, detail: String(e) }));
     results.notify = notifyRes.ok;
 
     confirmRes = await sendEmail(env, {
       to: email,
       replyTo: SALES_EMAIL,
-      subject: "We received your RFQ — Southern Perfection Fabrication",
-      html: clientHtml(p),
+      subject: isLM
+        ? "Your returnable-rack spec guide — Southern Perfection Fabrication"
+        : "We received your RFQ — Southern Perfection Fabrication",
+      html: isLM ? leadMagnetHtml(p) : clientHtml(p),
     }).catch((e) => ({ ok: false, detail: String(e) }));
     results.confirm = confirmRes.ok;
   }
@@ -422,7 +426,7 @@ const BRAND_FOOTER = `<tr><td style="background:#F3F1EC;padding:18px 28px;border
           <div style="color:#6F7782;font-size:12px;line-height:1.8;font-family:${FONT};">232 Hwy 49 S &middot; Byron, GA 31008<br>478-956-4442 &middot; toll-free (800) 237-4726 &middot; sales@southernperfection.com<br>ISO 9001 &middot; CAGE 2W654 &middot; Est. 1982</div>
         </td></tr>`;
 
-function internalHtml(p, meta) {
+function internalHtml(p, meta, isLM) {
   meta = meta || {};
   const fields = [
     ["Name", fullName(p)],
@@ -447,15 +451,15 @@ function internalHtml(p, meta) {
     ? `<a href="mailto:${encodeURIComponent(p.email)}" style="display:inline-block;margin-top:20px;background:#DD4E14;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:6px;font-family:${FONT};">Reply to ${esc(p.firstname || "the prospect")} &rarr;</a>`
     : "";
   const header = `<tr><td style="background:#16181C;padding:20px 28px;">
-          <div style="color:#DD4E14;font-size:20px;font-weight:bold;letter-spacing:1px;font-family:${FONT};">NEW RFQ</div>
-          <div style="color:#9AA0A6;font-size:12px;margin-top:5px;font-family:${FONT};">Submitted via southernperfection.com</div>
+          <div style="color:#DD4E14;font-size:20px;font-weight:bold;letter-spacing:1px;font-family:${FONT};">${isLM ? "GUIDE DOWNLOAD" : "NEW RFQ"}</div>
+          <div style="color:#9AA0A6;font-size:12px;margin-top:5px;font-family:${FONT};">${isLM ? "Spec-guide lead magnet &middot; nurture lead" : "Submitted via southernperfection.com"}</div>
         </td></tr>`;
   const body = `<tr><td style="padding:24px 28px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;">${rows}</table>
           ${replyBtn}
         </td></tr>`;
   const footer = `<tr><td style="background:#F3F1EC;padding:14px 28px;border-top:1px solid #D8D4CA;">
-          <div style="color:#6F7782;font-size:12px;font-family:${FONT};">Reply to this email to respond directly to the prospect.</div>
+          <div style="color:#6F7782;font-size:12px;font-family:${FONT};">${isLM ? "Downloaded the spec guide &mdash; a nurture lead, not an RFQ. Reply to reach them directly." : "Reply to this email to respond directly to the prospect."}</div>
         </td></tr>`;
   return emailShell(header, body, footer);
 }
@@ -472,6 +476,24 @@ function clientHtml(p) {
             <div style="color:#5F5E5A;font-size:13px;line-height:1.5;font-family:${FONT};">Just reply to this email and attach it &mdash; we'll match it to your request.</div>
           </td></tr></table>
           <a href="mailto:sales@southernperfection.com?subject=Re:%20My%20RFQ" style="display:inline-block;background:#DD4E14;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:6px;font-family:${FONT};">Reply with your details &rarr;</a>
+          <p style="color:#3c3f45;font-size:14px;line-height:1.6;margin:22px 0 0;font-family:${FONT};">Talk soon,<br>The team at Southern Perfection Fabrication</p>
+        </td></tr>`;
+  return emailShell(BRAND_HEADER, body, BRAND_FOOTER);
+}
+
+// Delivery email for the gated "How to Spec a Returnable Rack" lead magnet.
+function leadMagnetHtml(p) {
+  const first = p.firstname || "there";
+  const body = `<tr><td style="padding:28px 28px 8px;">
+          <div style="color:#DD4E14;font-size:12px;font-weight:bold;letter-spacing:1.5px;font-family:${FONT};">YOUR SPEC GUIDE</div>
+          <div style="color:#16181C;font-size:22px;font-weight:bold;margin:6px 0 16px;font-family:${FONT};">How to Spec a Returnable Rack</div>
+          <p style="color:#16181C;font-size:14px;line-height:1.6;margin:0 0 12px;font-family:${FONT};">Hi ${esc(first)},</p>
+          <p style="color:#3c3f45;font-size:14px;line-height:1.6;margin:0 0 18px;font-family:${FONT};">Thanks for grabbing the guide &mdash; here it is. It walks through everything we need to turn a part into a rack concept and a number: part &amp; load, freight lanes, the loop, environment, and volume.</p>
+          <a href="https://southernperfection.com/assets/guides/how-to-spec-a-returnable-rack.pdf" style="display:inline-block;background:#DD4E14;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:6px;font-family:${FONT};">Download the guide (PDF) &rarr;</a>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:22px 0 0;"><tr><td style="background:#F3F1EC;border-left:3px solid #DD4E14;padding:14px 16px;">
+            <div style="color:#16181C;font-size:14px;font-weight:bold;margin-bottom:3px;font-family:${FONT};">Filled in the checklist?</div>
+            <div style="color:#5F5E5A;font-size:13px;line-height:1.5;font-family:${FONT};">Reply with a part photo or print and we'll turn it into a rack concept and a real quote.</div>
+          </td></tr></table>
           <p style="color:#3c3f45;font-size:14px;line-height:1.6;margin:22px 0 0;font-family:${FONT};">Talk soon,<br>The team at Southern Perfection Fabrication</p>
         </td></tr>`;
   return emailShell(BRAND_HEADER, body, BRAND_FOOTER);
