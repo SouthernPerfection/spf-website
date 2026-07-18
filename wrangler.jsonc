@@ -8,5 +8,11 @@
     "binding": "ASSETS",
     "run_worker_first": true,
     "not_found_handling": "404-page"
+  },
+  "kv_namespaces": [
+    { "binding": "DRIPS", "id": "9c3eb188d67b492894b681227920c4f0" }
+  ],
+  "triggers": {
+    "crons": ["0 14 * * *"]
   }
 }

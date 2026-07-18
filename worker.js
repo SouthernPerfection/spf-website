@@ -79,7 +79,23 @@ export default {
       if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
       return handleRb2b(request, env, url.searchParams.get("token"));
     }
+    // One-click unsubscribe from The Returnable Report drips (CAN-SPAM).
+    if (path === "/api/unsub") {
+      const email = str(url.searchParams.get("e")).toLowerCase().trim();
+      const ok = !!email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+      if (ok && env.DRIPS) {
+        await env.DRIPS.put("u:" + email, "1");
+        await env.DRIPS.delete("d:welcome:" + email).catch(() => {});
+        await env.DRIPS.delete("d:guide:" + email).catch(() => {});
+      }
+      return new Response(unsubPageHtml(ok), { headers: { "content-type": "text/html; charset=utf-8" } });
+    }
     return env.ASSETS.fetch(request);
+  },
+
+  // Daily cron — send any drip emails that have come due.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runDrips(env));
   },
 };
 
@@ -163,6 +179,11 @@ async function handleRfq(request, env, debug) {
     }).catch((e) => ({ ok: false, detail: String(e) }));
     results.confirm = confirmRes.ok;
   }
+
+  // Enroll into the matching Returnable Report drip (best-effort; welcome email 1
+  // and the guide were already sent inline above).
+  if (isNews) await enrollDrip(env, "welcome", email, p.firstname).catch(() => {});
+  else if (isLM) await enrollDrip(env, "guide", email, p.firstname).catch(() => {});
 
   const ok = results.hubspot || results.notify || (isNews && results.confirm);
   const resp = { ok, results };
@@ -534,6 +555,161 @@ function newsletterWelcomeHtml(p) {
           <p style="color:#3c3f45;font-size:14px;line-height:1.6;margin:22px 0 0;font-family:${FONT};">Talk soon,<br>The team at Southern Perfection Fabrication<br><span style="color:#6F7782;font-size:13px;">Byron, GA &middot; building racks since 1982</span></p>
         </td></tr>`;
   return emailShell(BRAND_HEADER, body, BRAND_FOOTER);
+}
+
+// ---- The Returnable Report drip sequences --------------------------------
+// Triggered nurture, sent via Resend on a daily cron. Welcome email 1 and the
+// guide-delivery email are sent inline at signup (above); these are the follow-ups.
+const RR_ROI = "https://southernperfection.com/returnable-packaging-roi/?utm_source=newsletter&utm_medium=email&utm_campaign=returnable_report";
+const RR_CASE = "https://southernperfection.com/case-studies/?utm_source=newsletter&utm_medium=email&utm_campaign=returnable_report";
+const RR_RFQ = "https://southernperfection.com/?utm_source=newsletter&utm_medium=email&utm_campaign=returnable_report#rfq";
+
+function dripBody(cfg) {
+  const paras = cfg.paras
+    .map((t) => `<p style="color:#3c3f45;font-size:14px;line-height:1.6;margin:0 0 14px;font-family:${FONT};">${t}</p>`)
+    .join("");
+  const cta = cfg.cta
+    ? `<a href="${cfg.cta.url}" style="display:inline-block;background:#DD4E14;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:6px;font-family:${FONT};">${cfg.cta.text}</a>`
+    : "";
+  const cta2 = cfg.cta2
+    ? `<div style="margin-top:12px;"><a href="${cfg.cta2.url}" style="display:inline-block;background:#1F3864;color:#ffffff;text-decoration:none;font-size:13px;font-weight:bold;padding:10px 18px;border-radius:6px;font-family:${FONT};">${cfg.cta2.text}</a></div>`
+    : "";
+  return `<tr><td style="padding:26px 28px 6px;">
+          <div style="color:#DD4E14;font-size:12px;font-weight:bold;letter-spacing:1.5px;font-family:${FONT};">${cfg.eyebrow}</div>
+          <div style="color:#16181C;font-size:21px;font-weight:bold;margin:6px 0 14px;line-height:1.2;font-family:${FONT};">${cfg.heading}</div>
+          <p style="color:#16181C;font-size:14px;line-height:1.6;margin:0 0 14px;font-family:${FONT};">Hi ${esc(cfg.name)},</p>
+          ${paras}${cta}${cta2}
+          <p style="color:#3c3f45;font-size:14px;line-height:1.6;margin:22px 0 0;font-family:${FONT};">&mdash; The team at Southern Perfection Fabrication</p>
+        </td></tr>`;
+}
+
+// CAN-SPAM: every drip carries a working unsubscribe link (one-click, no login).
+function dripFooter(email) {
+  const unsub = "https://southernperfection.com/api/unsub?e=" + encodeURIComponent(email);
+  return `<tr><td style="background:#F3F1EC;padding:18px 28px;border-top:1px solid #D8D4CA;">
+          <div style="color:#6F7782;font-size:12px;line-height:1.8;font-family:${FONT};">232 Hwy 49 S &middot; Byron, GA 31008<br>478-956-4442 &middot; sales@southernperfection.com &middot; Est. 1982</div>
+          <div style="color:#9AA0A6;font-size:11px;margin-top:10px;font-family:${FONT};">You're getting The Returnable Report because you subscribed at southernperfection.com. <a href="${unsub}" style="color:#6F7782;">Unsubscribe</a>.</div>
+        </td></tr>`;
+}
+
+function rrEmail(p, cfg) {
+  cfg.name = p.firstname || "there";
+  return emailShell(BRAND_HEADER, dripBody(cfg), dripFooter(p.email));
+}
+
+// Welcome sequence (email 1 sent inline at signup) — emails 2 & 3.
+const dripWelcome2 = (p) => rrEmail(p, {
+  eyebrow: "THE RETURNABLE REPORT",
+  heading: "300 engine racks, half the lead time",
+  paras: [
+    "A quick example of returnable done right: a customer needed 300+ engine racks for a launch. We designed to their print, robotic-welded and powder-coated in-house, and delivered in about half the lead time they'd been quoted &mdash; one roof, design through finish.",
+    "That's the whole idea behind returnable: built once, runs hundreds of trips.",
+  ],
+  cta: { text: "See the case studies &rarr;", url: RR_CASE },
+});
+const dripWelcome3 = (p) => rrEmail(p, {
+  eyebrow: "THE RETURNABLE REPORT",
+  heading: "Got a part that needs a rack?",
+  paras: [
+    "No newsletter this time &mdash; just an offer. If you've got a part riding in packaging you don't love, send us a print or even a photo and we'll turn it into a rack concept and a real quote. No obligation.",
+  ],
+  cta: { text: "Send a print &rarr; get a quote", url: RR_RFQ },
+});
+
+// Guide-download nurture — emails 1, 2 & 3 (guide delivered inline at download).
+const dripGuide1 = (p) => rrEmail(p, {
+  eyebrow: "YOUR SPEC GUIDE",
+  heading: "Did the checklist raise any questions?",
+  paras: [
+    "Hope the spec guide was useful. That checklist usually surfaces a tricky spot or two &mdash; nesting, load points, the return trip, or truck density.",
+    "If you hit one, just reply to this email with a part photo or print and our engineers will tell you how we'd rack it &mdash; no charge, no obligation.",
+  ],
+  cta: { text: "Start an RFQ &rarr;", url: RR_RFQ },
+});
+const dripGuide2 = (p) => rrEmail(p, {
+  eyebrow: "YOUR SPEC GUIDE",
+  heading: "What a good rack does that a cheap one doesn't",
+  paras: [
+    "A returnable rack has three jobs, and cheap ones only do the first:",
+    "1. Protect the part &mdash; zero transit damage.<br>2. Maximize density &mdash; more parts per truck, lower freight.<br>3. Survive the loop &mdash; hundreds of trips without failing.",
+    "Get all three and the rack stops being a cost and starts paying you back.",
+  ],
+  cta: { text: "See how we've done it &rarr;", url: RR_CASE },
+});
+const dripGuide3 = (p) => rrEmail(p, {
+  eyebrow: "YOUR SPEC GUIDE",
+  heading: "Want us to spec it for you?",
+  paras: [
+    "You've got the guide, but you don't have to do it alone. Send us the part and your volumes and we'll come back with a rack concept, a density estimate, and a real number.",
+  ],
+  cta: { text: "Start an RFQ &rarr;", url: RR_RFQ },
+  cta2: { text: "ROI calculator &rarr;", url: RR_ROI },
+});
+
+// afterDays = days from enrollment (signup/download). stage = # of these sent so far.
+const DRIP_SEQUENCES = {
+  welcome: [
+    { afterDays: 3, subject: "300 engine racks, half the lead time", build: dripWelcome2 },
+    { afterDays: 6, subject: "Got a part that needs a rack?", build: dripWelcome3 },
+  ],
+  guide: [
+    { afterDays: 2, subject: "Did the checklist raise any questions?", build: dripGuide1 },
+    { afterDays: 5, subject: "What a good rack does that a cheap one doesn't", build: dripGuide2 },
+    { afterDays: 9, subject: "Want us to spec it for you?", build: dripGuide3 },
+  ],
+};
+
+// Enroll a subscriber into a drip (skips if they've unsubscribed). Best-effort.
+async function enrollDrip(env, seq, email, firstname) {
+  if (!env.DRIPS || !DRIP_SEQUENCES[seq]) return;
+  const key = email.toLowerCase();
+  if (await env.DRIPS.get("u:" + key)) return; // unsubscribed
+  const entry = { email, firstname: firstname || "", seq, enrolledAt: Date.now(), stage: 0 };
+  // 60-day TTL is a safety net; sequences finish and self-delete well before that.
+  await env.DRIPS.put("d:" + seq + ":" + key, JSON.stringify(entry), { expirationTtl: 60 * 60 * 24 * 60 });
+}
+
+// Cron: send any drip emails that have come due, advance/close each enrollment.
+async function runDrips(env) {
+  if (!env.DRIPS || !env.RESEND_API_KEY) return { checked: 0, sent: 0 };
+  let sent = 0, checked = 0, cursor;
+  do {
+    const list = await env.DRIPS.list({ prefix: "d:", cursor });
+    cursor = list.list_complete ? null : list.cursor;
+    for (const k of list.keys) {
+      checked++;
+      const raw = await env.DRIPS.get(k.name);
+      if (!raw) continue;
+      let e;
+      try { e = JSON.parse(raw); } catch { await env.DRIPS.delete(k.name); continue; }
+      if (await env.DRIPS.get("u:" + e.email.toLowerCase())) { await env.DRIPS.delete(k.name); continue; }
+      const steps = DRIP_SEQUENCES[e.seq];
+      if (!steps || e.stage >= steps.length) { await env.DRIPS.delete(k.name); continue; }
+      const step = steps[e.stage];
+      if (Date.now() < e.enrolledAt + step.afterDays * 86400000) continue; // not due yet
+      await sendEmail(env, {
+        to: e.email,
+        replyTo: SALES_EMAIL,
+        subject: step.subject,
+        html: step.build({ email: e.email, firstname: e.firstname }),
+      }).catch(() => {});
+      sent++;
+      e.stage++;
+      if (e.stage >= steps.length) await env.DRIPS.delete(k.name);
+      else await env.DRIPS.put(k.name, JSON.stringify(e), { expirationTtl: 60 * 60 * 24 * 60 });
+    }
+  } while (cursor);
+  return { checked, sent };
+}
+
+function unsubPageHtml(done) {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Unsubscribed</title></head>
+<body style="margin:0;background:#F3F1EC;font-family:${FONT};"><div style="max-width:520px;margin:60px auto;background:#fff;border:1px solid #D8D4CA;border-radius:12px;padding:32px;">
+<div style="color:#DD4E14;font-size:12px;font-weight:bold;letter-spacing:1.5px;">THE RETURNABLE REPORT</div>
+<h1 style="color:#16181C;font-size:24px;margin:8px 0 10px;">${done ? "You're unsubscribed." : "That link looks off."}</h1>
+<p style="color:#3c3f45;font-size:15px;line-height:1.6;">${done ? "You won't get any more emails from The Returnable Report. Changed your mind? Just subscribe again at southernperfection.com." : "We couldn't read that unsubscribe request. Email sales@southernperfection.com and we'll remove you."}</p>
+<a href="https://southernperfection.com/" style="display:inline-block;margin-top:14px;background:#16181C;color:#fff;text-decoration:none;font-weight:bold;font-size:14px;padding:11px 20px;border-radius:6px;">Back to southernperfection.com</a>
+</div></body></html>`;
 }
 
 // ---- helpers -------------------------------------------------------------
