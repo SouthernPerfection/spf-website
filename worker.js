@@ -118,6 +118,13 @@ async function handleRfq(request, env, debug) {
   const meta = { source_page: str(data.source_page), landing_page: str(data.landing_page) };
   // Lead-magnet (gated spec-guide) submissions are lower-intent than RFQs — treat them distinctly.
   const isLM = str(data.type) === "lead_magnet";
+  // Newsletter signups (footer / blog / exit-intent no-guide) — subscribe + welcome, no sales alert.
+  const isNews = str(data.type) === "newsletter";
+  if (isNews) {
+    p.message = "Subscribed to The Returnable Report" + (meta.source_page ? " (via " + meta.source_page + ")" : "");
+  } else if (data.newsletter_optin === true || str(data.newsletter_optin) === "true") {
+    p.message = (p.message ? p.message + " · " : "") + "Opted into The Returnable Report newsletter";
+  }
 
   const results = { hubspot: false, notify: false, confirm: false };
   let notifyRes = { ok: false, skipped: true };
@@ -130,29 +137,34 @@ async function handleRfq(request, env, debug) {
 
   // 2 + 3. Emails via Resend
   if (env.RESEND_API_KEY) {
-    // Guide downloads alert both sales@ and mmurdock@; RFQs stay on mmurdock@.
-    const alertTo = isLM ? [SALES_EMAIL, NOTIFY_EMAIL] : [NOTIFY_EMAIL];
-    notifyRes = await sendEmail(env, {
-      to: alertTo,
-      from: alertTo.includes(SALES_EMAIL) ? ALERT_FROM : FROM,
-      replyTo: email,
-      subject: `${isLM ? "New guide download" : "New RFQ"} — ${p.company || fullName(p) || email}`,
-      html: internalHtml(p, meta, isLM),
-    }).catch((e) => ({ ok: false, detail: String(e) }));
-    results.notify = notifyRes.ok;
+    // Newsletter signups skip the sales alert (keeps the inbox for real leads).
+    if (!isNews) {
+      // Guide downloads alert both sales@ and mmurdock@; RFQs stay on mmurdock@.
+      const alertTo = isLM ? [SALES_EMAIL, NOTIFY_EMAIL] : [NOTIFY_EMAIL];
+      notifyRes = await sendEmail(env, {
+        to: alertTo,
+        from: alertTo.includes(SALES_EMAIL) ? ALERT_FROM : FROM,
+        replyTo: email,
+        subject: `${isLM ? "New guide download" : "New RFQ"} — ${p.company || fullName(p) || email}`,
+        html: internalHtml(p, meta, isLM),
+      }).catch((e) => ({ ok: false, detail: String(e) }));
+      results.notify = notifyRes.ok;
+    }
 
     confirmRes = await sendEmail(env, {
       to: email,
       replyTo: SALES_EMAIL,
-      subject: isLM
+      subject: isNews
+        ? "Welcome to The Returnable Report"
+        : isLM
         ? "Your returnable-rack spec guide — Southern Perfection Fabrication"
         : "We received your RFQ — Southern Perfection Fabrication",
-      html: isLM ? leadMagnetHtml(p) : clientHtml(p),
+      html: isNews ? newsletterWelcomeHtml(p) : isLM ? leadMagnetHtml(p) : clientHtml(p),
     }).catch((e) => ({ ok: false, detail: String(e) }));
     results.confirm = confirmRes.ok;
   }
 
-  const ok = results.hubspot || results.notify;
+  const ok = results.hubspot || results.notify || (isNews && results.confirm);
   const resp = { ok, results };
   if (!ok) resp.error = "not_delivered";
   if (debug) {
@@ -502,6 +514,24 @@ function leadMagnetHtml(p) {
             <div style="color:#5F5E5A;font-size:13px;line-height:1.5;font-family:${FONT};">Reply with a part photo or print and we'll turn it into a rack concept and a real quote.</div>
           </td></tr></table>
           <p style="color:#3c3f45;font-size:14px;line-height:1.6;margin:22px 0 0;font-family:${FONT};">Talk soon,<br>The team at Southern Perfection Fabrication</p>
+        </td></tr>`;
+  return emailShell(BRAND_HEADER, body, BRAND_FOOTER);
+}
+
+// Confirmation email for a newsletter (The Returnable Report) signup.
+function newsletterWelcomeHtml(p) {
+  const first = p.firstname || "there";
+  const body = `<tr><td style="padding:28px 28px 8px;">
+          <div style="color:#DD4E14;font-size:12px;font-weight:bold;letter-spacing:1.5px;font-family:${FONT};">THE RETURNABLE REPORT</div>
+          <div style="color:#16181C;font-size:22px;font-weight:bold;margin:6px 0 16px;font-family:${FONT};">You're subscribed.</div>
+          <p style="color:#16181C;font-size:14px;line-height:1.6;margin:0 0 12px;font-family:${FONT};">Hi ${esc(first)},</p>
+          <p style="color:#3c3f45;font-size:14px;line-height:1.6;margin:0 0 18px;font-family:${FONT};">Thanks for subscribing to The Returnable Report &mdash; a short monthly note for people who ship parts and pay for packaging. One customer story, one shop capability, and one practical tip you can use. No spam, and you can unsubscribe anytime.</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 20px;"><tr><td style="background:#F3F1EC;border-left:3px solid #DD4E14;padding:14px 16px;">
+            <div style="color:#16181C;font-size:14px;font-weight:bold;margin-bottom:3px;font-family:${FONT};">While you're here</div>
+            <div style="color:#5F5E5A;font-size:13px;line-height:1.5;font-family:${FONT};">The fastest way to know if a returnable rack pays off for your parts is to run your own numbers.</div>
+          </td></tr></table>
+          <a href="https://southernperfection.com/returnable-packaging-roi/" style="display:inline-block;background:#DD4E14;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:6px;font-family:${FONT};">See your payback &rarr; ROI calculator</a>
+          <p style="color:#3c3f45;font-size:14px;line-height:1.6;margin:22px 0 0;font-family:${FONT};">Talk soon,<br>The team at Southern Perfection Fabrication<br><span style="color:#6F7782;font-size:13px;">Byron, GA &middot; building racks since 1982</span></p>
         </td></tr>`;
   return emailShell(BRAND_HEADER, body, BRAND_FOOTER);
 }

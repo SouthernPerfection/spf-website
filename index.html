@@ -391,6 +391,10 @@
             <label for="details">Tell us about the part &amp; need <span class="opt">(size, weight, volume, lanes, timing)</span></label>
             <textarea id="details" name="details" rows="4"></textarea>
           </div>
+          <label class="rfq-optin" style="display:flex;align-items:flex-start;gap:8px;font-size:.9rem;color:#6F7782;margin:2px 0 14px;cursor:pointer;">
+            <input type="checkbox" id="nlOptin" name="nlOptin" style="margin-top:3px;flex:none;">
+            <span>Also send me <strong>The Returnable Report</strong> — one useful email a month (tips &amp; ROI benchmarks). No spam.</span>
+          </label>
           <button type="submit" class="btn btn-spark btn-lg btn-block">Send my RFQ →</button>
           <p class="form-fineprint">We’ll reply with next steps — usually a concept and a number. Your info is used only to quote your project.</p>
           <p class="form-status" id="rfqStatus" role="status" aria-live="polite"></p>
@@ -492,8 +496,10 @@
       var ss; try{ ss=window.sessionStorage; }catch(err){}
       var source_page = (ss && (ss.getItem('spf_source') || ss.getItem('spf_landing'))) || location.pathname;
       var landing_page = (ss && ss.getItem('spf_landing')) || location.pathname;
+      var optin = document.getElementById('nlOptin');
       var payload = { firstname:firstname, lastname:lastname, company:val('company'),
         email:val('email'), phone:val('phone'), message:message,
+        newsletter_optin: !!(optin && optin.checked),
         source_page:source_page, landing_page:landing_page };
       statusEl.textContent = 'Sending…'; statusEl.className = 'form-status';
       fetch('/api/rfq', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
@@ -522,5 +528,6 @@
   <img height="1" width="1" style="display:none;" alt="" src="https://px.ads.linkedin.com/collect/?pid=9403242&fmt=gif" />
   </noscript>
   <!-- /LinkedIn Insight Tag -->
+  <script src="/assets/newsletter.js" defer></script>
 </body>
 </html>
