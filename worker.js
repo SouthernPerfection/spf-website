@@ -87,6 +87,10 @@ const HS_BASE = "https://api.hubapi.com";
 const SALES_EMAIL = "sales@southernperfection.com";
 const NOTIFY_EMAIL = "mmurdock@southernperfection.com"; // internal "New RFQ" alerts route here
 const FROM = "Southern Perfection Fabrication <sales@southernperfection.com>";
+// Internal alerts use a distinct sender so alerting sales@ isn't a sales@->sales@
+// self-send (which Resend previously auto-suppressed). Same verified domain, no
+// mailbox needed — replies route to reply_to (the prospect), not here.
+const ALERT_FROM = "SPF Website <notifications@southernperfection.com>";
 
 async function handleRfq(request, env, debug) {
   let data;
@@ -126,8 +130,11 @@ async function handleRfq(request, env, debug) {
 
   // 2 + 3. Emails via Resend
   if (env.RESEND_API_KEY) {
+    // Guide downloads alert both sales@ and mmurdock@; RFQs stay on mmurdock@.
+    const alertTo = isLM ? [SALES_EMAIL, NOTIFY_EMAIL] : [NOTIFY_EMAIL];
     notifyRes = await sendEmail(env, {
-      to: NOTIFY_EMAIL,
+      to: alertTo,
+      from: alertTo.includes(SALES_EMAIL) ? ALERT_FROM : FROM,
       replyTo: email,
       subject: `${isLM ? "New guide download" : "New RFQ"} — ${p.company || fullName(p) || email}`,
       html: internalHtml(p, meta, isLM),
@@ -195,14 +202,14 @@ async function upsertHubspot(p, env, meta) {
 }
 
 // ---- Resend --------------------------------------------------------------
-async function sendEmail(env, { to, replyTo, subject, html }) {
+async function sendEmail(env, { to, replyTo, subject, html, from }) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${env.RESEND_API_KEY}`,
     },
-    body: JSON.stringify({ from: FROM, to: Array.isArray(to) ? to : [to], reply_to: replyTo, subject, html }),
+    body: JSON.stringify({ from: from || FROM, to: Array.isArray(to) ? to : [to], reply_to: replyTo, subject, html }),
   });
   return { ok: res.ok, status: res.status, detail: res.ok ? "" : (await safeText(res)) };
 }
