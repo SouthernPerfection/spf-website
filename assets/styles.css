@@ -181,6 +181,9 @@ input, select, textarea {
   font: inherit; font-size: .95rem; background: #fff; color: var(--ink);
 }
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--spark); outline-offset: 1px; border-color: var(--spark); }
+.rfq-optin { display: flex; align-items: center; gap: .6rem; margin: .1rem 0 1.2rem; cursor: pointer; }
+.rfq-optin input[type="checkbox"] { width: 1.15rem; height: 1.15rem; min-width: 1.15rem; flex: 0 0 auto; padding: 0; margin: 0; border-radius: 4px; accent-color: var(--spark); }
+.rfq-optin span { font-size: .9rem; line-height: 1.4; color: var(--steel); }
 .form-fineprint { font-size: .8rem; color: var(--steel); margin: .8rem 0 0; }
 .form-status { font-size: .88rem; color: var(--steel); margin: .7rem 0 0; }
 .form-status-err { color: #b3261e; }
