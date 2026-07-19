@@ -73,6 +73,8 @@
     ".spf-m .in2 p.d{margin:0 0 14px;color:#3c3f45;font-size:13.5px;line-height:1.55}" +
     ".spf-m input{width:100%;border:1px solid #D8D4CA;border-radius:8px;padding:12px 14px;font-size:14px;font-family:inherit;margin:0 0 10px;color:#16181C}" +
     ".spf-m input:focus{outline:2px solid #DD4E14;outline-offset:1px;border-color:#DD4E14}" +
+    ".spf-m textarea{width:100%;border:1px solid #D8D4CA;border-radius:8px;padding:12px 14px;font-size:14px;font-family:inherit;margin:0 0 10px;color:#16181C;min-height:84px;resize:vertical}" +
+    ".spf-m textarea:focus{outline:2px solid #DD4E14;outline-offset:1px;border-color:#DD4E14}" +
     ".spf-m button.go{width:100%;background:#DD4E14;color:#fff;border:0;border-radius:8px;padding:13px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer}" +
     ".spf-m button.go:hover{background:#c4440f}" +
     ".spf-m button.go:disabled{opacity:.7;cursor:default}" +
@@ -216,6 +218,64 @@
     else document.body.appendChild(band);
   }
 
+  /* ---------- site-wide RFQ / "send a print" modal ---------- */
+  function buildRfqModal(){
+    var ov = document.createElement("div");
+    ov.className = "spf-m-ov";
+    ov.innerHTML =
+      '<div class="spf-m" role="dialog" aria-modal="true" aria-label="Get a quote">' +
+        '<div class="top"><button class="x" aria-label="Close">&times;</button>' +
+          '<div class="k">Get a quote</div>' +
+          '<h4>Send us your part</h4>' +
+          '<div class="tl">A rack concept and a real number &mdash; usually within a business day.</div>' +
+        '</div>' +
+        '<div class="in2">' +
+          '<p class="d">Tell us about the part and we\'ll come back with a concept and a quote. Have a print or photo? Reply to the confirmation email and attach it &mdash; we\'ll match it to your request.</p>' +
+          '<form novalidate>' +
+            '<input type="text" name="firstname" placeholder="First name" autocomplete="given-name">' +
+            '<input type="text" name="company" placeholder="Company" autocomplete="organization">' +
+            '<input type="email" name="email" placeholder="Work email" autocomplete="email" required>' +
+            '<textarea name="message" placeholder="The part &amp; need &mdash; size, weight, volume, lanes, timing"></textarea>' +
+            '<button type="submit" class="go">Send it &rarr;</button>' +
+            '<div class="msg" hidden></div>' +
+          '</form>' +
+          '<div class="fine">478-956-4442 &middot; sales@southernperfection.com &middot; We reply within one business day.</div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    function close(){ ov.classList.remove("show"); setTimeout(function(){ ov.style.display="none"; }, 200); }
+    function open(){ ov.style.display="flex"; requestAnimationFrame(function(){ ov.classList.add("show"); }); var i=ov.querySelector('input[name=email]'); if(i) setTimeout(function(){i.focus();},60); }
+    ov.querySelector(".x").addEventListener("click", close);
+    ov.addEventListener("click", function(e){ if(e.target===ov) close(); });
+    document.addEventListener("keydown", function(e){ if(e.key==="Escape" && ov.classList.contains("show")) close(); });
+    var form = ov.querySelector("form"); var msg = ov.querySelector(".msg"); var in2 = ov.querySelector(".in2");
+    form.addEventListener("submit", function(e){
+      e.preventDefault();
+      var email = form.email.value.trim();
+      if(!validEmail(email)){ msg.hidden=false; msg.className="msg err"; msg.textContent="Please enter a valid email."; return; }
+      var btn = form.querySelector(".go"); btn.disabled=true; btn.textContent="Sending…";
+      var payload = {
+        firstname: form.firstname.value.trim(),
+        company: form.company.value.trim(),
+        email: email,
+        message: form.message.value.trim(),
+        source_page: location.pathname,
+        landing_page: ssGet("spf_landing") || location.pathname,
+        gclid: ssGet("spf_gclid") || ""
+      };
+      post(payload).then(function(ok){
+        if(ok){
+          fireLead("RFQ", location.pathname);
+          in2.innerHTML = '<div class="done"><div class="big">We\'ve got it.</div><p>Check your inbox for a confirmation &mdash; reply and attach a print or photo of the part and we\'ll match it to your request. We reply within one business day.</p></div>';
+        } else {
+          btn.disabled=false; btn.innerHTML="Send it &rarr;";
+          msg.hidden=false; msg.className="msg err"; msg.textContent="Something went wrong — email sales@southernperfection.com and we'll jump on it.";
+        }
+      });
+    });
+    return { open: open, close: close };
+  }
+
   /* ---------- blog end-of-post subscribe CTA ---------- */
   function buildBlogCta(){
     if(!/^\/blog\/.+/.test(location.pathname)) return; // blog posts only, not the /blog/ index
@@ -251,9 +311,18 @@
   function init(){
     buildBand();
     buildBlogCta();
+    var rfqModal = buildRfqModal();
     document.addEventListener("click", function(e){
-      var t = e.target.closest && e.target.closest("[data-nl-open]");
-      if(t){ e.preventDefault(); newsletterModal.open(); }
+      if(!e.target.closest) return;
+      var nl = e.target.closest("[data-nl-open]");
+      if(nl){ e.preventDefault(); newsletterModal.open(); return; }
+      var rq = e.target.closest('a[href*="#rfq"], [data-rfq-open]');
+      if(rq){
+        // Homepage RFQ form is on-page — keep the native scroll there; upgrade every
+        // other page's "Start an RFQ" CTA to open the in-context modal.
+        if(location.pathname === "/" && !rq.hasAttribute("data-rfq-open")) return;
+        e.preventDefault(); rfqModal.open();
+      }
     });
     // Deep-link: /?subscribe or #subscribe opens the newsletter modal (e.g. the LinkedIn button).
     if(/[?&]subscribe(=|&|$)/.test(location.search) || location.hash === "#subscribe"){

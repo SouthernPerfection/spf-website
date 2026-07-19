@@ -141,6 +141,12 @@ async function handleRfq(request, env, debug) {
   } else if (data.newsletter_optin === true || str(data.newsletter_optin) === "true") {
     p.message = (p.message ? p.message + " · " : "") + "Opted into The Returnable Report newsletter";
   }
+  // Google Ads click id -> stored on the contact note for offline conversion import
+  // (click -> RFQ -> won revenue uploaded back to Google Ads).
+  const gclid = str(data.gclid);
+  if (gclid && !isNews) {
+    p.message = (p.message ? p.message + " · " : "") + "gclid: " + gclid;
+  }
 
   const results = { hubspot: false, notify: false, confirm: false };
   let notifyRes = { ok: false, skipped: true };

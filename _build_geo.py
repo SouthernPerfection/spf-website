@@ -197,7 +197,7 @@ def page(title, desc, canonical, schema, body, cta_h, cta_p):
 {FONTS}
 {schema_blocks}
 {ANALYTICS}
-  <script src="/assets/rfq-attribution.js" defer></script>
+  <script src="/assets/rfq-attribution.js?v=fa4d94d3" defer></script>
   <!-- RB2B visitor identification -->
   <script>!function(key) {if (window.reb2b) return;window.reb2b = {loaded: true};var s = document.createElement("script");s.async = true;s.src = "https://ddwl4m2hdecbv.cloudfront.net/b/" + key + "/" + key + ".js.gz";document.getElementsByTagName("script")[0].parentNode.insertBefore(s, document.getElementsByTagName("script")[0]);}("VN080HZ1Z26J");</script>
 </head>
@@ -211,7 +211,7 @@ def page(title, desc, canonical, schema, body, cta_h, cta_p):
 
 {FOOTER}
 {LINKEDIN}
-  <script src="/assets/newsletter.js?v=d5a71ee2" defer></script>
+  <script src="/assets/newsletter.js?v=e3c060fc" defer></script>
 </body>
 </html>
 """

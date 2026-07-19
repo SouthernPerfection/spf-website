@@ -10,6 +10,14 @@
     if (!ss.getItem("spf_landing")) {
       ss.setItem("spf_landing", location.pathname);
     }
+    // Google Ads click id (gclid / gbraid / wbraid) — captured once per session so an
+    // RFQ can be tied back to the ad click for offline conversion import (click -> RFQ
+    // -> won revenue back into Google Ads). Additive, best-effort.
+    try {
+      var qs = new URLSearchParams(location.search);
+      var gid = qs.get("gclid") || qs.get("gbraid") || qs.get("wbraid");
+      if (gid && !ss.getItem("spf_gclid")) ss.setItem("spf_gclid", gid);
+    } catch (err) {}
     // Source page = the page the visitor was on when they clicked an RFQ CTA
     // (links to #rfq / /#rfq). Captured on the way to the homepage form.
     document.addEventListener(
