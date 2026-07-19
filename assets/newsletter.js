@@ -49,12 +49,16 @@
     ".spf-nl-done{border-left:3px solid #DD4E14;padding-left:15px;min-width:260px}" +
     ".spf-nl-done .big{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#16181C;letter-spacing:.5px;line-height:1}" +
     ".spf-nl-done p{margin:5px 0 0;color:#3c3f45;font-size:14px}" +
-    /* blog end-of-post CTA */
-    ".spf-nl-inpost{max-width:760px;margin:10px auto 0;background:#F3F1EC;border:1px solid #E3DFD6;border-left:4px solid #DD4E14;border-radius:10px;padding:22px 26px;font-family:'IBM Plex Sans',system-ui,sans-serif}" +
-    ".spf-nl-inpost .k{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#DD4E14;font-weight:600;margin-bottom:6px}" +
-    ".spf-nl-inpost h3{font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:.6px;font-size:25px;margin:0 0 6px;color:#16181C;line-height:1.05}" +
-    ".spf-nl-inpost p{margin:0 0 13px;font-size:14px;color:#5F5E5A;line-height:1.5}" +
-    ".spf-nl-inpost button{background:#DD4E14;color:#fff;border:0;border-radius:7px;padding:11px 22px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer}" +
+    /* blog end-of-post CTA — premium dark card */
+    ".spf-nl-inpost{max-width:768px;margin:18px auto 6px;background:radial-gradient(130% 150% at 100% 0%,#1F3864 0%,#16181C 62%);border-radius:16px;padding:32px 36px;color:#F3F1EC;font-family:'IBM Plex Sans',system-ui,sans-serif;position:relative;overflow:hidden;box-shadow:0 18px 46px rgba(22,24,28,.20)}" +
+    ".spf-nl-inpost .gridtex{position:absolute;inset:0;opacity:.05;background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:34px 34px;pointer-events:none}" +
+    ".spf-nl-inpost .spark{position:absolute;left:0;top:26px;bottom:26px;width:4px;background:#DD4E14;border-radius:0 3px 3px 0}" +
+    ".spf-nl-inpost .row{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:20px 30px;justify-content:space-between}" +
+    ".spf-nl-inpost .txt{flex:1 1 350px}" +
+    ".spf-nl-inpost .k{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:2.5px;text-transform:uppercase;color:#DD4E14;font-weight:600;margin-bottom:8px}" +
+    ".spf-nl-inpost h3{font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:.8px;font-size:31px;margin:0 0 8px;color:#ffffff;line-height:1.0}" +
+    ".spf-nl-inpost p{margin:0;font-size:13.5px;color:#C7CBD1;line-height:1.55;max-width:450px}" +
+    ".spf-nl-inpost button{background:#DD4E14;color:#fff;border:0;border-radius:8px;padding:14px 28px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;box-shadow:0 6px 18px rgba(221,78,20,.35)}" +
     ".spf-nl-inpost button:hover{background:#c4440f}" +
     /* overlay + card */
     ".spf-m-ov{position:fixed;inset:0;background:rgba(9,11,14,.6);backdrop-filter:blur(3px);z-index:99998;display:none;align-items:center;justify-content:center;padding:18px;opacity:0;transition:opacity .18s}" +
@@ -223,10 +227,15 @@
     var cta = document.createElement("div");
     cta.className = "spf-nl-inpost";
     cta.innerHTML =
-      '<div class="k">The Returnable Report</div>' +
-      '<h3>Enjoyed this? Get one useful email a month.</h3>' +
-      '<p>A customer story, a shop capability, and a practical tip &mdash; for people who ship parts and pay for packaging. No spam.</p>' +
-      '<button type="button" data-nl-open>Subscribe &rarr;</button>';
+      '<div class="gridtex"></div><div class="spark"></div>' +
+      '<div class="row">' +
+        '<div class="txt">' +
+          '<div class="k">The Returnable Report</div>' +
+          '<h3>Get one useful email a month</h3>' +
+          '<p>A customer story, a shop capability, and a practical tip &mdash; for the people who ship parts and pay for packaging. No spam, unsubscribe anytime.</p>' +
+        '</div>' +
+        '<button type="button" data-nl-open>Subscribe &rarr;</button>' +
+      '</div>';
     if(sec.parentNode) sec.parentNode.insertBefore(cta, sec.nextSibling);
   }
 
