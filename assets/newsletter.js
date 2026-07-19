@@ -49,6 +49,13 @@
     ".spf-nl-done{border-left:3px solid #DD4E14;padding-left:15px;min-width:260px}" +
     ".spf-nl-done .big{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#16181C;letter-spacing:.5px;line-height:1}" +
     ".spf-nl-done p{margin:5px 0 0;color:#3c3f45;font-size:14px}" +
+    /* blog end-of-post CTA */
+    ".spf-nl-inpost{max-width:760px;margin:10px auto 0;background:#F3F1EC;border:1px solid #E3DFD6;border-left:4px solid #DD4E14;border-radius:10px;padding:22px 26px;font-family:'IBM Plex Sans',system-ui,sans-serif}" +
+    ".spf-nl-inpost .k{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#DD4E14;font-weight:600;margin-bottom:6px}" +
+    ".spf-nl-inpost h3{font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:.6px;font-size:25px;margin:0 0 6px;color:#16181C;line-height:1.05}" +
+    ".spf-nl-inpost p{margin:0 0 13px;font-size:14px;color:#5F5E5A;line-height:1.5}" +
+    ".spf-nl-inpost button{background:#DD4E14;color:#fff;border:0;border-radius:7px;padding:11px 22px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer}" +
+    ".spf-nl-inpost button:hover{background:#c4440f}" +
     /* overlay + card */
     ".spf-m-ov{position:fixed;inset:0;background:rgba(9,11,14,.6);backdrop-filter:blur(3px);z-index:99998;display:none;align-items:center;justify-content:center;padding:18px;opacity:0;transition:opacity .18s}" +
     ".spf-m-ov.show{opacity:1}" +
@@ -207,6 +214,22 @@
     else document.body.appendChild(band);
   }
 
+  /* ---------- blog end-of-post subscribe CTA ---------- */
+  function buildBlogCta(){
+    if(!/^\/blog\/.+/.test(location.pathname)) return; // blog posts only, not the /blog/ index
+    var art = document.querySelector(".article-body");
+    if(!art) return;
+    var sec = art.closest("section") || art;
+    var cta = document.createElement("div");
+    cta.className = "spf-nl-inpost";
+    cta.innerHTML =
+      '<div class="k">The Returnable Report</div>' +
+      '<h3>Enjoyed this? Get one useful email a month.</h3>' +
+      '<p>A customer story, a shop capability, and a practical tip &mdash; for people who ship parts and pay for packaging. No spam.</p>' +
+      '<button type="button" data-nl-open>Subscribe &rarr;</button>';
+    if(sec.parentNode) sec.parentNode.insertBefore(cta, sec.nextSibling);
+  }
+
   /* ---------- exit-intent (guide) ---------- */
   function armExitIntent(){
     if(EI_SKIP.indexOf(location.pathname) !== -1) return;
@@ -221,6 +244,7 @@
 
   function init(){
     buildBand();
+    buildBlogCta();
     document.addEventListener("click", function(e){
       var t = e.target.closest && e.target.closest("[data-nl-open]");
       if(t){ e.preventDefault(); newsletterModal.open(); }
