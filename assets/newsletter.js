@@ -225,6 +225,10 @@
       var t = e.target.closest && e.target.closest("[data-nl-open]");
       if(t){ e.preventDefault(); newsletterModal.open(); }
     });
+    // Deep-link: /?subscribe or #subscribe opens the newsletter modal (e.g. the LinkedIn button).
+    if(/[?&]subscribe(=|&|$)/.test(location.search) || location.hash === "#subscribe"){
+      newsletterModal.open();
+    }
     armExitIntent();
   }
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", init);
