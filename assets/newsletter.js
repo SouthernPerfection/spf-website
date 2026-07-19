@@ -49,16 +49,14 @@
     ".spf-nl-done{border-left:3px solid #DD4E14;padding-left:15px;min-width:260px}" +
     ".spf-nl-done .big{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#16181C;letter-spacing:.5px;line-height:1}" +
     ".spf-nl-done p{margin:5px 0 0;color:#3c3f45;font-size:14px}" +
-    /* blog end-of-post CTA — premium dark card */
-    ".spf-nl-inpost{max-width:768px;margin:18px auto 6px;background:radial-gradient(130% 150% at 100% 0%,#1F3864 0%,#16181C 62%);border-radius:16px;padding:32px 36px;color:#F3F1EC;font-family:'IBM Plex Sans',system-ui,sans-serif;position:relative;overflow:hidden;box-shadow:0 18px 46px rgba(22,24,28,.20)}" +
-    ".spf-nl-inpost .gridtex{position:absolute;inset:0;opacity:.05;background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:34px 34px;pointer-events:none}" +
-    ".spf-nl-inpost .spark{position:absolute;left:0;top:26px;bottom:26px;width:4px;background:#DD4E14;border-radius:0 3px 3px 0}" +
-    ".spf-nl-inpost .row{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:20px 30px;justify-content:space-between}" +
+    /* blog end-of-post CTA — clean dark card */
+    ".spf-nl-inpost{max-width:768px;margin:22px auto 44px;background:#16181C;border-radius:14px;padding:30px 34px;color:#F3F1EC;font-family:'IBM Plex Sans',system-ui,sans-serif}" +
+    ".spf-nl-inpost .row{display:flex;flex-wrap:wrap;align-items:center;gap:20px 32px;justify-content:space-between}" +
     ".spf-nl-inpost .txt{flex:1 1 350px}" +
-    ".spf-nl-inpost .k{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:2.5px;text-transform:uppercase;color:#DD4E14;font-weight:600;margin-bottom:8px}" +
-    ".spf-nl-inpost h3{font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:.8px;font-size:31px;margin:0 0 8px;color:#ffffff;line-height:1.0}" +
-    ".spf-nl-inpost p{margin:0;font-size:13.5px;color:#C7CBD1;line-height:1.55;max-width:450px}" +
-    ".spf-nl-inpost button{background:#DD4E14;color:#fff;border:0;border-radius:8px;padding:14px 28px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;box-shadow:0 6px 18px rgba(221,78,20,.35)}" +
+    ".spf-nl-inpost .k{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:2.5px;text-transform:uppercase;color:#DD4E14;font-weight:600;margin-bottom:9px}" +
+    ".spf-nl-inpost h3{font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:.8px;font-size:30px;margin:0 0 8px;color:#ffffff;line-height:1.0}" +
+    ".spf-nl-inpost p{margin:0;font-size:13.5px;color:#B9BDC4;line-height:1.55;max-width:460px}" +
+    ".spf-nl-inpost button{background:#DD4E14;color:#fff;border:0;border-radius:8px;padding:13px 26px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}" +
     ".spf-nl-inpost button:hover{background:#c4440f}" +
     /* overlay + card */
     ".spf-m-ov{position:fixed;inset:0;background:rgba(9,11,14,.6);backdrop-filter:blur(3px);z-index:99998;display:none;align-items:center;justify-content:center;padding:18px;opacity:0;transition:opacity .18s}" +
@@ -227,7 +225,6 @@
     var cta = document.createElement("div");
     cta.className = "spf-nl-inpost";
     cta.innerHTML =
-      '<div class="gridtex"></div><div class="spark"></div>' +
       '<div class="row">' +
         '<div class="txt">' +
           '<div class="k">The Returnable Report</div>' +

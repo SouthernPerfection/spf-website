@@ -211,7 +211,7 @@ def page(title, desc, canonical, schema, body, cta_h, cta_p):
 
 {FOOTER}
 {LINKEDIN}
-  <script src="/assets/newsletter.js?v=a86850fd" defer></script>
+  <script src="/assets/newsletter.js?v=d5a71ee2" defer></script>
 </body>
 </html>
 """
