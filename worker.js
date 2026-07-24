@@ -84,6 +84,12 @@ export default {
     if (path === "/api/gads-conversions") {
       return handleGoogleAdsConversions(env, url.searchParams.get("token"), url.searchParams.get("debug") === "1");
     }
+    // One-time admin: create the Estimate/Job-Form deal properties via HubSpot's
+    // schema API (idempotent — dedupes by label, moves existing into the group).
+    // Secured by ?token=; safe to remove after the properties exist.
+    if (path === "/api/admin/deal-props") {
+      return handleDealPropsSetup(env, url.searchParams.get("token"));
+    }
     // One-click unsubscribe from The Returnable Report drips (CAN-SPAM).
     if (path === "/api/unsub") {
       const email = str(url.searchParams.get("e")).toLowerCase().trim();
@@ -105,6 +111,84 @@ export default {
 };
 
 const HS_BASE = "https://api.hubapi.com";
+
+// ---- One-time deal-property setup (Estimate/Job Form) --------------------
+// Creates the deal properties a rep fills to make a deal quote-ready. All
+// optional. Idempotent: dedupes by label (moves an existing match into the
+// group rather than duplicating), so it's safe to re-run.
+const DEAL_PROP_GROUP = { name: "estimate_job_form", label: "Estimate / Job Form" };
+const YN = [{ label: "Yes", value: "Yes" }, { label: "No", value: "No" }];
+const DEAL_PROPS = [
+  { label: "Ship-to address", type: "string", fieldType: "text" },
+  { label: "Ship via", type: "string", fieldType: "text" },
+  { label: "F.O.B.", type: "enumeration", fieldType: "select",
+    options: [{ label: "Origin", value: "Origin" }, { label: "Destination", value: "Destination" }] },
+  { label: "Due date", type: "date", fieldType: "date" },
+  { label: "Color / Finish", type: "string", fieldType: "text" },
+  { label: "Casters", type: "enumeration", fieldType: "select", options: YN },
+  { label: "Stencil", type: "enumeration", fieldType: "select", options: YN },
+  { label: "Automated system / critical dimensions", type: "enumeration", fieldType: "select", options: YN },
+  { label: "Payment terms", type: "enumeration", fieldType: "select",
+    options: ["Net 30", "Net 60", "Due on receipt", "Other"].map((v) => ({ label: v, value: v })) },
+  { label: "Materials provided", type: "enumeration", fieldType: "checkbox",
+    options: ["Pictures", "Customer Part", "Drawing", "Customer Sample", "Our Design", "Customer CAD File"]
+      .map((v) => ({ label: v, value: v })) },
+  { label: "Special instructions", type: "string", fieldType: "textarea" },
+  { label: "Estimate #", type: "string", fieldType: "text" },
+  { label: "Job #", type: "string", fieldType: "text" },
+  { label: "Sales Order #", type: "string", fieldType: "text" },
+  { label: "Purchase Order #", type: "string", fieldType: "text" },
+  { label: "Ref. past job #", type: "string", fieldType: "text" },
+  { label: "Ref. estimate #", type: "string", fieldType: "text" },
+];
+
+function propSlug(s) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 90);
+}
+
+async function handleDealPropsSetup(env, token) {
+  if (!env.GADS_CONV_TOKEN || token !== env.GADS_CONV_TOKEN) return json({ error: "unauthorized" }, 401);
+  if (!env.HUBSPOT_TOKEN) return json({ error: "no_hubspot_token" }, 500);
+  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${env.HUBSPOT_TOKEN}` };
+  const results = [];
+
+  // 1. Ensure the property group exists (409 = already there).
+  const gRes = await fetch(`${HS_BASE}/crm/v3/properties/deals/groups`, {
+    method: "POST", headers, body: JSON.stringify(DEAL_PROP_GROUP),
+  });
+  results.push({ step: "group", status: gRes.status });
+
+  // 2. Map existing deal properties by label so we never duplicate.
+  const listRes = await fetch(`${HS_BASE}/crm/v3/properties/deals`, { headers });
+  if (!listRes.ok) {
+    return json({ error: "list_failed", status: listRes.status, hint: listRes.status === 403
+      ? "HubSpot token missing crm.schemas.deals.read/write — add it to the private app" : undefined, results }, 502);
+  }
+  const byLabel = {};
+  for (const p of (await listRes.json()).results || []) byLabel[p.label] = p.name;
+
+  // 3. Create each property, or move an existing same-label one into the group.
+  for (const def of DEAL_PROPS) {
+    const existing = byLabel[def.label];
+    if (existing) {
+      const r = await fetch(`${HS_BASE}/crm/v3/properties/deals/${encodeURIComponent(existing)}`, {
+        method: "PATCH", headers, body: JSON.stringify({ groupName: DEAL_PROP_GROUP.name }),
+      });
+      results.push({ label: def.label, action: "moved", status: r.status });
+    } else {
+      const body = { name: propSlug(def.label), label: def.label, type: def.type,
+        fieldType: def.fieldType, groupName: DEAL_PROP_GROUP.name };
+      if (def.options) body.options = def.options.map((o, i) => ({ ...o, displayOrder: i }));
+      const r = await fetch(`${HS_BASE}/crm/v3/properties/deals`, {
+        method: "POST", headers, body: JSON.stringify(body),
+      });
+      results.push({ label: def.label, action: "created", status: r.status,
+        detail: r.ok ? "" : (await r.text()).slice(0, 160) });
+    }
+  }
+  const failed = results.filter((r) => r.status && r.status >= 400 && r.step !== "group" && r.status !== 409);
+  return json({ ok: failed.length === 0, created: results.length - 1, failed: failed.length, results });
+}
 
 // ---- Google Ads offline conversions -------------------------------------
 // Reports Closed-Won deals whose originating contact carried a gclid, so Google
