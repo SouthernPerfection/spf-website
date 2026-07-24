@@ -155,6 +155,10 @@ async function handleRfq(request, env, debug) {
     p.message = (p.message ? p.message + " · " : "") + "gclid: " + gclid;
   }
 
+  // What converted them, for HubSpot lead_source + lifecycle stage.
+  meta.kind = isNews ? "newsletter" : isLM ? "lead_magnet" : "rfq";
+  meta.gclid = gclid;
+
   const results = { hubspot: false, notify: false, confirm: false };
   let notifyRes = { ok: false, skipped: true };
   let confirmRes = { ok: false, skipped: true };
@@ -232,19 +236,52 @@ async function upsertHubspot(p, env, meta) {
         : "");
     properties.message = (properties.message ? properties.message + "\n\n" : "") + "— " + note;
   }
-  const body = JSON.stringify({ properties });
+  // Structured attribution. These are custom properties — if the portal doesn't have
+  // them yet the API 400s, so every request below retries with them stripped.
+  const CUSTOM = ["lead_source", "spf_source_page", "spf_landing_page", "gclid"];
+  if (meta) {
+    if (LEAD_SOURCE[meta.kind]) properties.lead_source = LEAD_SOURCE[meta.kind];
+    if (meta.source_page) properties.spf_source_page = meta.source_page;
+    if (meta.landing_page) properties.spf_landing_page = meta.landing_page;
+    if (meta.gclid) properties.gclid = meta.gclid;
+  }
 
-  const create = await fetch(`${HS_BASE}/crm/v3/objects/contacts`, { method: "POST", headers, body });
+  // Send a request, retrying once without the custom properties if they don't exist.
+  // Strips from the props actually sent, so native fields (lifecyclestage) survive the retry.
+  const send = async (url, method, props) => {
+    const go = (pr) => fetch(url, { method, headers, body: JSON.stringify({ properties: pr }) });
+    const r = await go(props);
+    if (r.ok || r.status !== 400) return r;
+    const bare = { ...props };
+    CUSTOM.forEach((k) => delete bare[k]);
+    return Object.keys(bare).length === Object.keys(props).length ? r : go(bare);
+  };
+
+  // Lifecycle stage is set on CREATE only — HubSpot won't move a stage backwards, and
+  // we never want a newsletter signup to downgrade an existing sales-qualified contact.
+  const onCreate = { ...properties };
+  if (meta && LIFECYCLE[meta.kind]) onCreate.lifecyclestage = LIFECYCLE[meta.kind];
+
+  const create = await send(`${HS_BASE}/crm/v3/objects/contacts`, "POST", onCreate);
   if (create.ok) return true;
   if (create.status === 409) {
-    const update = await fetch(
+    const update = await send(
       `${HS_BASE}/crm/v3/objects/contacts/${encodeURIComponent(p.email)}?idProperty=email`,
-      { method: "PATCH", headers, body }
+      "PATCH",
+      properties
     );
     return update.ok;
   }
   return false;
 }
+
+// Conversion type -> HubSpot lead_source value + lifecycle stage (set on create only).
+const LEAD_SOURCE = { rfq: "RFQ", lead_magnet: "Guide Download", newsletter: "Newsletter" };
+const LIFECYCLE = {
+  rfq: "salesqualifiedlead",
+  lead_magnet: "marketingqualifiedlead",
+  newsletter: "subscriber",
+};
 
 // ---- Resend --------------------------------------------------------------
 async function sendEmail(env, { to, replyTo, subject, html, from }) {
