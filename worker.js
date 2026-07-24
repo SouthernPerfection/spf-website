@@ -290,9 +290,10 @@ async function handleRfq(request, env, debug, ctx) {
     // open deals; only ever creates, never touches an existing deal. Runs after
     // the response so it never slows the RFQ submission.
     if (contactId && typeof contactId === "string" && meta.kind === "rfq") {
-      const dealWork = maybeCreateDeal(env, contactId, p, meta).catch(() => {});
-      if (ctx && ctx.waitUntil) ctx.waitUntil(dealWork);
-      else await dealWork;
+      const dealWork = maybeCreateDeal(env, contactId, p, meta);
+      if (debug) results.deal = await dealWork.catch((e) => ({ error: String(e) }));
+      else if (ctx && ctx.waitUntil) ctx.waitUntil(dealWork.catch(() => {}));
+      else await dealWork.catch(() => {});
     }
   }
 
@@ -425,7 +426,7 @@ async function maybeCreateDeal(env, contactId, p, meta) {
         const hasOpen = (((await rRes.json()).results) || []).some(
           (d) => !d.properties || d.properties.hs_is_closed !== "true"
         );
-        if (hasOpen) return; // live deal already exists — leave it alone
+        if (hasOpen) return { skipped: "existing_open_deal" }; // live deal exists — leave it alone
       }
     }
   }
@@ -446,14 +447,20 @@ async function maybeCreateDeal(env, contactId, p, meta) {
   const props = { dealname: (p.company || fullName(p) || p.email) + " — Website RFQ" };
   if (pipeline) props.pipeline = pipeline;
   if (dealstage) props.dealstage = dealstage;
-  await fetch(`${HS_BASE}/crm/v3/objects/deals`, {
+  const dRes = await fetch(`${HS_BASE}/crm/v3/objects/deals`, {
     method: "POST", headers,
     body: JSON.stringify({
       properties: props,
       // associationTypeId 3 = Deal -> Contact (HubSpot-defined).
       associations: [{ to: { id: contactId }, types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 3 }] }],
     }),
-  }).catch(() => {});
+  }).catch((e) => ({ ok: false, status: "fetch_failed", _e: String(e) }));
+  return {
+    created: !!(dRes && dRes.ok),
+    status: dRes ? dRes.status : "no_response",
+    pipeline, dealstage,
+    detail: dRes && !dRes.ok && dRes.text ? (await dRes.text()).slice(0, 300) : "",
+  };
 }
 
 // Conversion type -> HubSpot lead_source value + lifecycle stage (set on create only).
