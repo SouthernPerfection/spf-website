@@ -102,6 +102,13 @@ export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(runDrips(env));
   },
+
+  // Inbound lead email (via Cloudflare Email Routing) — AI-parse it into a
+  // HubSpot contact + deal, just like an RFQ. Wired to a forwarding address
+  // (e.g. lead@inbox.southernperfection.com) fed by a Gmail filter/forward.
+  async email(message, env, ctx) {
+    await handleInboundEmail(message, env).catch(() => {});
+  },
 };
 
 const HS_BASE = "https://api.hubapi.com";
@@ -410,7 +417,7 @@ async function upsertHubspot(p, env, meta) {
 // Open a deal for a fresh RFQ and associate it to the contact — unless the
 // contact already has an OPEN deal (dedupe: never double up on a live opportunity,
 // and never touch an existing deal). Best-effort; failures are swallowed by caller.
-async function maybeCreateDeal(env, contactId, p, meta) {
+async function maybeCreateDeal(env, contactId, p, meta, opts = {}) {
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${env.HUBSPOT_TOKEN}` };
 
   // Dedupe: if any associated deal is not closed, a live opportunity already exists.
@@ -444,7 +451,10 @@ async function maybeCreateDeal(env, contactId, p, meta) {
     }
   }
 
-  const props = { dealname: (p.company || fullName(p) || p.email) + " — Website RFQ" };
+  const props = {
+    dealname: opts.dealname || (p.company || fullName(p) || p.email) + " — Website RFQ",
+    ...(opts.props || {}),
+  };
   if (pipeline) props.pipeline = pipeline;
   if (dealstage) props.dealstage = dealstage;
   const dRes = await fetch(`${HS_BASE}/crm/v3/objects/deals`, {
@@ -463,12 +473,158 @@ async function maybeCreateDeal(env, contactId, p, meta) {
   };
 }
 
+// ---- Inbound lead email -> AI parse -> HubSpot ---------------------------
+// Reads a forwarded/routed lead email, extracts the structured fields with
+// Claude, and files a contact + deal (lead_source Cold Email, SQL) — the
+// email equivalent of the RFQ form. Handles forwarded emails (extracts the
+// ORIGINAL sender, not the forwarder) and skips junk/auto-replies.
+async function handleInboundEmail(message, env) {
+  const raw = await new Response(message.raw).text().catch(() => "");
+  const from = String(message.from || "").toLowerCase();
+
+  // Gmail forwarding-verification: relay the code/link so setup can complete.
+  if (from.includes("forwarding-noreply@google.com") || /forwarding[- ]confirmation/i.test(raw)) {
+    if (env.RESEND_API_KEY) {
+      const code = (raw.match(/\b\d{9}\b/) || [])[0];
+      const link = (raw.match(/https:\/\/mail[^"\s<>]*google\.com\/\S*/i) || [])[0];
+      await sendEmail(env, {
+        to: [NOTIFY_EMAIL, "william.doxey@southernperfection.com"],
+        from: ALERT_FROM,
+        subject: "Confirm Gmail forwarding to the lead parser",
+        html: `<p>Gmail wants to confirm forwarding to the lead parser.</p>` +
+          (code ? `<p>Confirmation code: <b>${esc(code)}</b></p>` : "") +
+          (link ? `<p><a href="${esc(link)}">Click to confirm</a></p>` : "") +
+          `<pre style="font-size:11px;color:#6F7782">${esc(raw.slice(0, 700))}</pre>`,
+      }).catch(() => {});
+    }
+    return;
+  }
+
+  const parsed = await parseLeadEmail(env, raw);
+
+  // Parse failed (API down / no key) -> don't silently drop a possible lead; alert with the raw.
+  if (!parsed) {
+    if (env.RESEND_API_KEY) {
+      await sendEmail(env, {
+        to: ALERT_TO, from: ALERT_FROM,
+        subject: "Inbound email needs manual review (parser unavailable)",
+        html: `<p>An email hit the lead parser but couldn't be auto-filed. Please review:</p>` +
+          `<pre style="font-size:11px">${esc(raw.slice(0, 2000))}</pre>`,
+      }).catch(() => {});
+    }
+    return;
+  }
+  // Confidently not a lead (auto-reply / OOO / unsubscribe / spam) -> drop quietly.
+  if (!parsed.isLead) return;
+
+  const email = str(parsed.email).trim();
+  // A lead we can't contact (no usable original-sender email) -> hand to the team.
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    if (env.RESEND_API_KEY) {
+      await sendEmail(env, {
+        to: ALERT_TO, from: ALERT_FROM,
+        subject: `Inbound lead (no email found) — ${str(parsed.company) || "review"}`,
+        html: `<p>Looks like a lead but no sender email was found — review manually.</p>` +
+          `<p>${esc(str(parsed.summary))}</p><pre style="font-size:11px">${esc(raw.slice(0, 1500))}</pre>`,
+      }).catch(() => {});
+    }
+    return;
+  }
+
+  const p = {
+    email,
+    firstname: str(parsed.firstname),
+    lastname: str(parsed.lastname),
+    company: str(parsed.company),
+    phone: str(parsed.phone),
+    message: str(parsed.summary),
+  };
+  const meta = { kind: "cold_email", source_page: "inbound-email", gclid: "" };
+  const contactId = env.HUBSPOT_TOKEN ? await upsertHubspot(p, env, meta).catch(() => null) : null;
+
+  if (contactId && typeof contactId === "string") {
+    const ask = parsed.quantity && parsed.product ? `Requested: ${str(parsed.quantity)} ${str(parsed.product)}`
+      : parsed.quantity ? `Requested: ${str(parsed.quantity)}`
+      : parsed.product ? `Product: ${str(parsed.product)}` : "";
+    const special = [ask, str(parsed.requirements)].filter(Boolean).join(". ");
+    await maybeCreateDeal(env, contactId, p, meta, {
+      dealname: (p.company || fullName(p) || p.email) + " — Inbound Lead",
+      props: special ? { special_instructions: special } : {},
+    }).catch(() => {});
+  }
+
+  // Alert the team, same as an RFQ.
+  if (env.RESEND_API_KEY) {
+    const askLine = [str(parsed.quantity), str(parsed.product)].filter(Boolean).join(" ");
+    await sendEmail(env, {
+      to: ALERT_TO, from: ALERT_FROM, replyTo: p.email,
+      subject: `New inbound lead — ${p.company || fullName(p) || p.email}`,
+      html: `<p><b>Auto-filed from an inbound email.</b></p>` +
+        `<p><b>${esc(fullName(p) || "(no name)")}</b>${p.company ? " &middot; " + esc(p.company) : ""}<br>` +
+        `${esc(p.email)}${p.phone ? " &middot; " + esc(p.phone) : ""}</p>` +
+        `<p>${esc(str(parsed.summary))}</p>` +
+        (askLine ? `<p><b>Ask:</b> ${esc(askLine)}</p>` : "") +
+        (parsed.requirements ? `<p><b>Notes:</b> ${esc(str(parsed.requirements))}</p>` : "") +
+        `<p style="color:#6F7782;font-size:12px">Contact + deal created in HubSpot (lead source: Cold Email).</p>`,
+    }).catch(() => {});
+  }
+}
+
+// Extract structured lead fields from a raw inbound email using Claude.
+// Returns null on failure (no key / API error / unparseable).
+async function parseLeadEmail(env, raw) {
+  if (!env.ANTHROPIC_API_KEY || !raw) return null;
+  const prompt =
+`You parse inbound emails to a metal fabrication company that makes returnable steel racks, dunnage, and containers. The message may be forwarded — if so, extract the ORIGINAL sender (the prospect), never the person who forwarded it.
+
+Respond with ONLY a JSON object, no prose or code fences:
+{
+ "isLead": boolean,      // true ONLY for a genuine buying inquiry / quote request / interested prospect
+ "confidence": number,   // 0..1
+ "firstname": string,
+ "lastname": string,
+ "email": string,        // ORIGINAL sender's email address
+ "company": string,
+ "phone": string,
+ "product": string,      // what they want, e.g. "steel racks"
+ "quantity": string,     // e.g. "36 racks"
+ "requirements": string, // special asks: NDA, certifications, timing, freight, drawings
+ "summary": string       // one sentence describing the ask
+}
+Use "" for anything unknown. Set isLead=false for auto-replies, out-of-office, unsubscribe requests, bounces, newsletters, or non-buying messages.
+
+EMAIL:
+${raw.slice(0, 12000)}`;
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001",
+      max_tokens: 1024,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  }).catch(() => null);
+  if (!res || !res.ok) return null;
+  const data = await res.json().catch(() => null);
+  const text = data && data.content && data.content[0] && data.content[0].text;
+  if (!text) return null;
+  const m = text.match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try { return JSON.parse(m[0]); } catch { return null; }
+}
+
 // Conversion type -> HubSpot lead_source value + lifecycle stage (set on create only).
-const LEAD_SOURCE = { rfq: "RFQ", lead_magnet: "Guide Download", newsletter: "Newsletter" };
+const LEAD_SOURCE = { rfq: "RFQ", lead_magnet: "Guide Download", newsletter: "Newsletter", cold_email: "Cold Email" };
 const LIFECYCLE = {
   rfq: "salesqualifiedlead",
   lead_magnet: "marketingqualifiedlead",
   newsletter: "subscriber",
+  cold_email: "salesqualifiedlead", // an interested inbound lead is treated like an RFQ (SQL)
 };
 
 // ---- Resend --------------------------------------------------------------
