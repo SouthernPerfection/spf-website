@@ -51,7 +51,7 @@ const REDIRECTS = {
 };
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -73,7 +73,7 @@ export default {
 
     if (path === "/api/rfq") {
       if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
-      return handleRfq(request, env, url.searchParams.get("debug") === "1");
+      return handleRfq(request, env, url.searchParams.get("debug") === "1", ctx);
     }
     if (path === "/api/rb2b") {
       if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
@@ -233,7 +233,7 @@ const FROM = "Southern Perfection Fabrication <sales@southernperfection.com>";
 // mailbox needed — replies route to reply_to (the prospect), not here.
 const ALERT_FROM = "SPF Website <notifications@southernperfection.com>";
 
-async function handleRfq(request, env, debug) {
+async function handleRfq(request, env, debug, ctx) {
   let data;
   try {
     data = await request.json();
@@ -283,7 +283,17 @@ async function handleRfq(request, env, debug) {
 
   // 1. HubSpot contact
   if (env.HUBSPOT_TOKEN) {
-    results.hubspot = await upsertHubspot(p, env, meta).catch(() => false);
+    const contactId = await upsertHubspot(p, env, meta).catch(() => null);
+    results.hubspot = !!contactId;
+    // Auto-open a deal for real RFQs (not guide downloads / newsletter) so the
+    // click -> RFQ -> Won chain is always associated. Deduped against existing
+    // open deals; only ever creates, never touches an existing deal. Runs after
+    // the response so it never slows the RFQ submission.
+    if (contactId && typeof contactId === "string" && meta.kind === "rfq") {
+      const dealWork = maybeCreateDeal(env, contactId, p, meta).catch(() => {});
+      if (ctx && ctx.waitUntil) ctx.waitUntil(dealWork);
+      else await dealWork;
+    }
   }
 
   // 2 + 3. Emails via Resend
@@ -380,17 +390,70 @@ async function upsertHubspot(p, env, meta) {
   const onCreate = { ...properties };
   if (meta && LIFECYCLE[meta.kind]) onCreate.lifecyclestage = LIFECYCLE[meta.kind];
 
+  // Returns the contact id (string) on success, else null — the id lets the
+  // caller open+associate a deal.
   const create = await send(`${HS_BASE}/crm/v3/objects/contacts`, "POST", onCreate);
-  if (create.ok) return true;
+  if (create.ok) return ((await create.json().catch(() => ({}))).id) || true;
   if (create.status === 409) {
     const update = await send(
       `${HS_BASE}/crm/v3/objects/contacts/${encodeURIComponent(p.email)}?idProperty=email`,
       "PATCH",
       properties
     );
-    return update.ok;
+    if (!update.ok) return null;
+    return ((await update.json().catch(() => ({}))).id) || true;
   }
-  return false;
+  return null;
+}
+
+// Open a deal for a fresh RFQ and associate it to the contact — unless the
+// contact already has an OPEN deal (dedupe: never double up on a live opportunity,
+// and never touch an existing deal). Best-effort; failures are swallowed by caller.
+async function maybeCreateDeal(env, contactId, p, meta) {
+  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${env.HUBSPOT_TOKEN}` };
+
+  // Dedupe: if any associated deal is not closed, a live opportunity already exists.
+  const aRes = await fetch(`${HS_BASE}/crm/v4/objects/contacts/${contactId}/associations/deals`, { headers }).catch(() => null);
+  if (aRes && aRes.ok) {
+    const ids = (((await aRes.json()).results) || []).map((r) => String(r.toObjectId)).filter(Boolean);
+    if (ids.length) {
+      const rRes = await fetch(`${HS_BASE}/crm/v3/objects/deals/batch/read`, {
+        method: "POST", headers,
+        body: JSON.stringify({ properties: ["hs_is_closed"], inputs: ids.map((id) => ({ id })) }),
+      }).catch(() => null);
+      if (rRes && rRes.ok) {
+        const hasOpen = (((await rRes.json()).results) || []).some(
+          (d) => !d.properties || d.properties.hs_is_closed !== "true"
+        );
+        if (hasOpen) return; // live deal already exists — leave it alone
+      }
+    }
+  }
+
+  // Land the deal in the Sales pipeline's first stage (looked up, not hardcoded).
+  let pipeline, dealstage;
+  const pRes = await fetch(`${HS_BASE}/crm/v3/pipelines/deals`, { headers }).catch(() => null);
+  if (pRes && pRes.ok) {
+    const pipes = ((await pRes.json()).results) || [];
+    const pipe = pipes.find((x) => /sales/i.test(x.label || "")) || pipes[0];
+    if (pipe) {
+      pipeline = pipe.id;
+      const stages = (pipe.stages || []).slice().sort((a, b) => a.displayOrder - b.displayOrder);
+      if (stages[0]) dealstage = stages[0].id;
+    }
+  }
+
+  const props = { dealname: (p.company || fullName(p) || p.email) + " — Website RFQ" };
+  if (pipeline) props.pipeline = pipeline;
+  if (dealstage) props.dealstage = dealstage;
+  await fetch(`${HS_BASE}/crm/v3/objects/deals`, {
+    method: "POST", headers,
+    body: JSON.stringify({
+      properties: props,
+      // associationTypeId 3 = Deal -> Contact (HubSpot-defined).
+      associations: [{ to: { id: contactId }, types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 3 }] }],
+    }),
+  }).catch(() => {});
 }
 
 // Conversion type -> HubSpot lead_source value + lifecycle stage (set on create only).
