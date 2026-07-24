@@ -289,11 +289,11 @@ async function handleRfq(request, env, debug, ctx) {
     // click -> RFQ -> Won chain is always associated. Deduped against existing
     // open deals; only ever creates, never touches an existing deal. Runs after
     // the response so it never slows the RFQ submission.
+    // Awaited inline (not waitUntil) so the deal is reliably created for every
+    // RFQ — a few extra API calls of latency is worth guaranteed attribution.
     if (contactId && typeof contactId === "string" && meta.kind === "rfq") {
-      const dealWork = maybeCreateDeal(env, contactId, p, meta);
-      if (debug) results.deal = await dealWork.catch((e) => ({ error: String(e) }));
-      else if (ctx && ctx.waitUntil) ctx.waitUntil(dealWork.catch(() => {}));
-      else await dealWork.catch(() => {});
+      const dealRes = await maybeCreateDeal(env, contactId, p, meta).catch((e) => ({ error: String(e) }));
+      if (debug) results.deal = dealRes;
     }
   }
 
