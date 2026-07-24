@@ -101,7 +101,14 @@ export default {
 
 const HS_BASE = "https://api.hubapi.com";
 const SALES_EMAIL = "sales@southernperfection.com";
-const NOTIFY_EMAIL = "mmurdock@southernperfection.com"; // internal "New RFQ" alerts route here
+const NOTIFY_EMAIL = "mmurdock@southernperfection.com";
+// Internal alert recipients — both RFQs and guide downloads route to the full sales team.
+const ALERT_TO = [
+  SALES_EMAIL,
+  NOTIFY_EMAIL,
+  "william.doxey@southernperfection.com",
+  "tristan.wynn@southernperfection.com",
+];
 const FROM = "Southern Perfection Fabrication <sales@southernperfection.com>";
 // Internal alerts use a distinct sender so alerting sales@ isn't a sales@->sales@
 // self-send (which Resend previously auto-suppressed). Same verified domain, no
@@ -161,11 +168,10 @@ async function handleRfq(request, env, debug) {
   if (env.RESEND_API_KEY) {
     // Newsletter signups skip the sales alert (keeps the inbox for real leads).
     if (!isNews) {
-      // Guide downloads alert both sales@ and mmurdock@; RFQs stay on mmurdock@.
-      const alertTo = isLM ? [SALES_EMAIL, NOTIFY_EMAIL] : [NOTIFY_EMAIL];
+      // RFQs and guide downloads both alert the full sales team (ALERT_TO).
       notifyRes = await sendEmail(env, {
-        to: alertTo,
-        from: alertTo.includes(SALES_EMAIL) ? ALERT_FROM : FROM,
+        to: ALERT_TO,
+        from: ALERT_FROM, // sales@ is always a recipient, so never send as sales@
         replyTo: email,
         subject: `${isLM ? "New guide download" : "New RFQ"} — ${p.company || fullName(p) || email}`,
         html: internalHtml(p, meta, isLM),
