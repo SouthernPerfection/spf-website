@@ -79,6 +79,11 @@ export default {
       if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
       return handleRb2b(request, env, url.searchParams.get("token"));
     }
+    // Google Ads pulls this file on a schedule to import Closed-Won revenue as
+    // offline conversions (RFQ click -> won deal). Secured by ?token=.
+    if (path === "/api/gads-conversions") {
+      return handleGoogleAdsConversions(env, url.searchParams.get("token"), url.searchParams.get("debug") === "1");
+    }
     // One-click unsubscribe from The Returnable Report drips (CAN-SPAM).
     if (path === "/api/unsub") {
       const email = str(url.searchParams.get("e")).toLowerCase().trim();
@@ -100,6 +105,119 @@ export default {
 };
 
 const HS_BASE = "https://api.hubapi.com";
+
+// ---- Google Ads offline conversions -------------------------------------
+// Reports Closed-Won deals whose originating contact carried a gclid, so Google
+// Ads can optimize toward won revenue instead of raw form-fills. Google Ads
+// *pulls* this over HTTPS on a schedule (Tools > Conversions > Uploads >
+// Schedules). Rolling window; Google dedupes on (gclid, name, time), so
+// re-serving the same rows is safe as long as Conversion Time stays stable.
+//
+// The Conversion Name column MUST exactly match the conversion action created in
+// Google Ads ("Track conversions from clicks"). Override via env if named
+// differently. Only deals with a gclid on an associated contact are emitted —
+// which is exactly the click->RFQ->won chain we want to feed back to Ads.
+const GADS_WINDOW_DAYS = 90;
+
+async function handleGoogleAdsConversions(env, token, debug) {
+  const convName = env.GADS_CONVERSION_NAME || "RFQ Won";
+  const csv = (body, status = 200) =>
+    new Response(body, { status, headers: { "content-type": "text/csv; charset=utf-8" } });
+  const diag = { deals: 0, associated: 0, withGclid: 0, rows: 0, hubspot: {} };
+
+  // Protect the endpoint — it exposes won-deal revenue + click ids.
+  if (!env.GADS_CONV_TOKEN || token !== env.GADS_CONV_TOKEN) {
+    return debug ? json({ error: "unauthorized" }, 401) : csv("error,unauthorized\n", 401);
+  }
+  if (!env.HUBSPOT_TOKEN) {
+    return debug ? json({ error: "no_hubspot_token" }, 500) : csv("error,no_hubspot_token\n", 500);
+  }
+  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${env.HUBSPOT_TOKEN}` };
+  const out = ["Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency"];
+  const done = () => (debug ? json(diag) : csv(out.join("\n") + "\n"));
+
+  // 1. Recently closed-won deals (hs_is_closed_won works across custom stages).
+  const since = Date.now() - GADS_WINDOW_DAYS * 864e5;
+  const searchBody = {
+    filterGroups: [{ filters: [
+      { propertyName: "hs_is_closed_won", operator: "EQ", value: "true" },
+      { propertyName: "closedate", operator: "GTE", value: String(since) },
+    ] }],
+    properties: ["amount", "closedate"],
+    sorts: [{ propertyName: "closedate", direction: "DESCENDING" }],
+    limit: 100,
+  };
+  const dealsRes = await fetch(`${HS_BASE}/crm/v3/objects/deals/search`, {
+    method: "POST", headers, body: JSON.stringify(searchBody),
+  }).catch(() => null);
+  diag.hubspot.deals = dealsRes ? dealsRes.status : "fetch_failed";
+  if (!dealsRes || !dealsRes.ok) return done(); // fail open (header-only file)
+  const deals = ((await dealsRes.json()).results) || [];
+  diag.deals = deals.length;
+  if (!deals.length) return done();
+
+  // 2. Deal -> associated contact ids (one batch call).
+  const assocRes = await fetch(`${HS_BASE}/crm/v4/associations/deals/contacts/batch/read`, {
+    method: "POST", headers, body: JSON.stringify({ inputs: deals.map((d) => ({ id: d.id })) }),
+  }).catch(() => null);
+  diag.hubspot.assoc = assocRes ? assocRes.status : "fetch_failed";
+  const dealToContacts = {};
+  const contactIds = new Set();
+  if (assocRes && assocRes.ok) {
+    for (const r of ((await assocRes.json()).results) || []) {
+      const ids = (r.to || []).map((t) => String(t.toObjectId));
+      dealToContacts[r.from.id] = ids;
+      ids.forEach((id) => contactIds.add(id));
+    }
+  }
+  diag.associated = contactIds.size;
+  if (!contactIds.size) return done();
+
+  // 3. gclid per contact (one batch call).
+  const cRes = await fetch(`${HS_BASE}/crm/v3/objects/contacts/batch/read`, {
+    method: "POST", headers,
+    body: JSON.stringify({ properties: ["gclid"], inputs: [...contactIds].map((id) => ({ id })) }),
+  }).catch(() => null);
+  diag.hubspot.contacts = cRes ? cRes.status : "fetch_failed";
+  const gclidById = {};
+  if (cRes && cRes.ok) {
+    for (const c of ((await cRes.json()).results) || []) {
+      if (c.properties && c.properties.gclid) gclidById[c.id] = c.properties.gclid;
+    }
+  }
+  diag.withGclid = Object.keys(gclidById).length;
+
+  // 4. One row per won deal that has a gclid on an associated contact.
+  const seen = new Set();
+  for (const d of deals) {
+    const gclid = (dealToContacts[d.id] || []).map((id) => gclidById[id]).find(Boolean);
+    if (!gclid) continue; // no click id -> not attributable to a Google Ads click
+    const raw = d.properties.closedate;
+    const closeMs = /^\d+$/.test(String(raw)) ? Number(raw) : Date.parse(raw);
+    if (!closeMs) continue;
+    const key = gclid + "|" + closeMs;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const amt = d.properties.amount ? Number(d.properties.amount) : "";
+    out.push([gclid, convName, gadsTime(closeMs), amt === "" ? "" : amt, amt === "" ? "" : "USD"]
+      .map(csvCell).join(","));
+  }
+  diag.rows = out.length - 1;
+  return done();
+}
+
+function gadsTime(ms) {
+  const d = new Date(ms);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ` +
+    `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())} +0000`;
+}
+
+function csvCell(v) {
+  const s = String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
 const SALES_EMAIL = "sales@southernperfection.com";
 const NOTIFY_EMAIL = "mmurdock@southernperfection.com";
 // Internal alert recipients — both RFQs and guide downloads route to the full sales team.
