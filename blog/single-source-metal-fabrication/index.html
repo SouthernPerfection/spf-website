@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="/assets/styles.css">
   <script type="application/ld+json">
-  {"@context": "https://schema.org", "@graph": [{"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://southernperfection.com/"}, {"@type": "ListItem", "position": 2, "name": "Blog", "item": "https://southernperfection.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Single-source fabrication: why one roof beats three vendors", "item": "https://southernperfection.com/blog/single-source-metal-fabrication/"}]}, {"@type": "BlogPosting", "headline": "Single-source fabrication: why one roof beats three vendors", "description": "The case for single-source metal fabrication — how one-roof cut, weld, and finish cuts lead time, freight, and quality risk vs juggling separate suppliers. Southern Perfection Fabrication.", "datePublished": "2026-07-08", "dateModified": "2026-07-08", "author": {"@type": "Organization", "name": "Southern Perfection Fabrication"}, "publisher": {"@type": "Organization", "name": "Southern Perfection Fabrication", "telephone": "+1-478-956-4442"}, "mainEntityOfPage": "https://southernperfection.com/blog/single-source-metal-fabrication/"}]}
+  {"@context": "https://schema.org", "@graph": [{"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://southernperfection.com/"}, {"@type": "ListItem", "position": 2, "name": "Blog", "item": "https://southernperfection.com/blog/"}, {"@type": "ListItem", "position": 3, "name": "Single-source fabrication: why one roof beats three vendors", "item": "https://southernperfection.com/blog/single-source-metal-fabrication/"}]}, {"@type": "BlogPosting", "headline": "Single-source fabrication: why one roof beats three vendors", "description": "The case for single-source metal fabrication — how one-roof cut, weld, and finish cuts lead time, freight, and quality risk vs juggling separate suppliers. Southern Perfection Fabrication.", "datePublished": "2026-07-08", "dateModified": "2026-07-27", "author": {"@type": "Organization", "name": "Southern Perfection Fabrication"}, "publisher": {"@type": "Organization", "name": "Southern Perfection Fabrication", "telephone": "+1-478-956-4442"}, "mainEntityOfPage": "https://southernperfection.com/blog/single-source-metal-fabrication/"}, {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is single-source metal fabrication?", "acceptedAnswer": {"@type": "Answer", "text": "Single-source metal fabrication means one shop takes your part from raw material to finished, inspected product — cutting, forming, welding, machining, and finishing all in the same facility. Instead of coordinating separate cutters, welders, and coaters, you issue one purchase order to one accountable team."}}, {"@type": "Question", "name": "Does single-source actually reduce lead time?", "acceptedAnswer": {"@type": "Answer", "text": "Usually, yes. Most of the calendar time in a multi-vendor flow is queue time and freight between shops, not actual machine time. When the steps run in sequence in one building, you eliminate the transit legs and the stacked backlogs, so the part moves on a single schedule instead of waiting in line at three or four separate shops."}}, {"@type": "Question", "name": "Is one shop really cheaper than shopping each step separately?", "acceptedAnswer": {"@type": "Answer", "text": "The per-step piece price at a specialist can look lower on paper, but it ignores freight between vendors, duplicate receiving and inspection, buffer inventory, and the engineering time lost to finger-pointing when defects cross vendor lines. Single-source usually wins on total delivered cost even when an individual line item isn't the cheapest quote."}}, {"@type": "Question", "name": "How does single-source improve quality accountability?", "acceptedAnswer": {"@type": "Answer", "text": "With one team owning the whole part, there's no seam to hide behind. Tolerance stack-up is managed across the entire flow rather than at isolated vendors, deviations get caught at the station instead of at final inspection, and there's a single quality system and record for the finished part. Southern Perfection Fabrication runs an ISO 9001 quality system with in-house CMM inspection."}}, {"@type": "Question", "name": "When should I still split fabrication across vendors?", "acceptedAnswer": {"@type": "Answer", "text": "Split when a part needs a specialty process the shop genuinely doesn't offer, when a supplier's proximity to your assembly line dominates the cost equation, or when a high-volume program needs a deliberate second source for capacity or risk. The sensible default is to consolidate everything that reasonably can live under one roof and split only for a concrete reason."}}]}]}
   </script>
   <!-- ANALYTICS -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7NE6WQG77Y"></script>
@@ -34,6 +34,21 @@
 .tile .tile-cat{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--spark,#DD4E14);font-weight:600;}
 .tile .tile-meta{font-size:12.5px;color:var(--steel,#6F7782);}
 .tile .tile-go{margin-top:2px;}
+/* substantial-article components */
+.article-body h2{margin-top:2.2em;}
+.article-body h3{margin-top:1.6em;font-size:1.12rem;}
+.post-tablewrap{overflow-x:auto;margin:1.4em 0;border:1px solid var(--line,#D8D4CA);border-radius:10px;}
+.post-table{border-collapse:collapse;width:100%;min-width:460px;font-size:.94rem;}
+.post-table th,.post-table td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line,#D8D4CA);font-variant-numeric:tabular-nums;}
+.post-table thead th{background:var(--paper,#F3F1EC);font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.72rem;letter-spacing:.8px;text-transform:uppercase;color:var(--steel,#6F7782);}
+.post-table tbody tr:last-child td{border-bottom:0;}
+.post-table tfoot td{border-top:2px solid var(--ink,#16181C);font-weight:700;background:color-mix(in srgb,var(--spark,#DD4E14) 7%,transparent);}
+.post-table .num{text-align:right;}
+.post-callout{border-left:4px solid var(--spark,#DD4E14);background:color-mix(in srgb,var(--spark,#DD4E14) 7%,transparent);padding:14px 18px;border-radius:0 10px 10px 0;margin:1.5em 0;}
+.post-callout p{margin:0;}
+.post-callout .k{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.7rem;letter-spacing:1px;text-transform:uppercase;color:var(--spark,#DD4E14);font-weight:600;display:block;margin-bottom:4px;}
+.post-note{font-size:.86rem;color:var(--steel,#6F7782);font-style:italic;margin-top:.5em;}
+.post-faq h3{border-top:1px solid var(--line,#D8D4CA);padding-top:1.1em;}
 </style>
 </head>
 <body>
@@ -172,20 +187,68 @@
       <p class="eyebrow"><a href="/" style="color:inherit">Home</a> · <a href="/blog/" style="color:inherit">Blog</a></p>
       <h1 id="h">Single-source fabrication: why one roof beats three vendors.</h1>
       <p class="lede">Every handoff between suppliers adds time, cost, and someone to blame.</p>
-      <p class="article-meta">Fabrication &middot; Jul 8, 2026 &middot; 2 min read &middot; Southern Perfection Fabrication, Byron, GA</p>
+      <p class="article-meta">Fabrication &middot; Jul 8, 2026 &middot; 7 min read &middot; Southern Perfection Fabrication, Byron, GA</p>
     </div></section>
     <section class="section"><div class="wrap article-body">
-      <h2>The hidden cost of handoffs</h2>
-<p>Sourcing racks across a cutter, a welder, and a coater means parts truck between shops, lead times stack, and when quality slips, suppliers point at each other. Every handoff is a delay and a risk.</p>
-<h2>One roof, one PO, one accountable team</h2>
-<p>When cutting, forming, welding, and <a href="/capabilities/powder-coating/">finishing</a> all happen <a href="/capabilities/">under one roof</a>, the job moves on a single clock. One purchase order, one team that owns the result end to end — and a shop you can visit and audit.</p>
-<h2>What it saves</h2>
+      <p>If you buy fabricated metal for an OEM or a Tier-1, you already know the failure mode. A weldment gets laser-cut at one shop, trucked to a press brake somewhere else, welded at a third, then sent out for coating — and every seam between those vendors is a place where the schedule slips and nobody owns the result. When a hole pattern doesn't line up or a weld cracks inspection, the cutter blames the former's flat pattern, the former blames the print, and the welder blames both. You end up managing a supply chain instead of buying a part.</p>
+<p>The alternative is single-source fabrication: one shop that takes the raw material and hands you a finished, inspected part. It isn't just a purchasing convenience. Consolidating cut, form, weld, machine, and finish under one roof changes where tolerance is controlled, who is accountable, and how fast the part moves. This guide walks through where multi-vendor sourcing quietly bleeds money, where single-source wins, and — honestly — where splitting vendors still makes sense.</p>
+
+<h2>The hidden cost of handoffs</h2>
+<p>The line-item price on each vendor's quote is the part of the cost you can see. The expensive part is invisible until the program is running. Every handoff between suppliers adds a queue (your job waits behind everyone else's at the next shop), a freight leg, a receiving-and-inspection cycle, and a fresh opportunity for a communication gap. Three vendors means three schedules you don't control, three quality systems that don't talk to each other, and three parties who can each credibly point at the other two when something is wrong.</p>
+<p>Tolerance stack-up is the technical version of the same problem. A flat blank cut a few thousandths off, a bend angle that drifts half a degree, a fixture interpreted differently at the weld shop — individually each is in tolerance, but they accumulate across vendors because no single party sees the whole stack. When cut, form, and weld happen in sequence in the same building, the people forming the part can see how it cut and the people welding it can see how it formed. Deviations get caught and corrected at the station, not discovered at final inspection after everyone has been paid.</p>
+
+<h2>What "one roof" actually means</h2>
+<p>Single-source isn't a broker who subcontracts the work and staples the invoices together. It means the part physically flows through one facility in sequence: <a href="/capabilities/laser-cutting/">laser and plasma cutting</a> the blank, <a href="/capabilities/forming/">press-brake forming and plate rolling</a> the geometry, <a href="/capabilities/robotic-welding/">MIG and robotic welding</a> the assembly, <a href="/capabilities/cnc-machining/">CNC machining</a> the critical features, in-house powder coating or wet paint for finish, and <a href="/capabilities/quality-inspection/">CMM and in-process inspection</a> confirming it before it ships. At <a href="/custom-manufacturing/">Southern Perfection Fabrication</a>, that whole chain has lived in one plant in Byron, GA since 1982, backed by in-house SolidWorks design and engineering so a print question gets answered by someone standing near the machine, not routed through a chain of vendors.</p>
+<p>The practical effect is a single traveler moving with the part and a single team that owns it end to end. One purchase order, one point of contact, one quality record — and a shop you can visit, audit, and walk end to end in an afternoon.</p>
+
+<h2>Where multi-vendor quietly loses money</h2>
+<p>The waste rarely shows up as a single big number. It hides in a dozen small places:</p>
 <ul>
-<li><strong>Lead time</strong> — no inter-shop freight or queue-stacking; often cut roughly in half.</li>
-<li><strong>Freight</strong> — regional, single-facility sourcing instead of long hauls between vendors.</li>
-<li><strong>Quality risk</strong> — one accountable quality system (<a href="/capabilities/quality-inspection/">ISO 9001, CMM</a>), not three.</li>
+<li><strong>Inter-shop freight.</strong> Every leg between vendors is a truck, a crate, and a day. Blanks to the former, formed parts to the welder, weldments to the coater — none of it adds value, all of it adds cost and handling damage risk.</li>
+<li><strong>Queue time.</strong> Your part waits in each shop's backlog. Four vendors can mean four separate queues stacked end to end, which is why split supply chains so often run weeks longer than the sum of the actual machine time.</li>
+<li><strong>Duplicate receiving and inspection.</strong> Each transfer triggers another receiving dock, another incoming-inspection step, another chance to reject and reship.</li>
+<li><strong>Finger-pointing on defects.</strong> When accountability is split, root-cause analysis stalls. You pay for the investigation in engineering hours and in program delay while vendors debate whose fault it is.</li>
+<li><strong>Change-order friction.</strong> A single revision has to be pushed to every vendor, re-quoted, and re-synchronized. Miss one and you're building the old rev at one station and the new rev at the next.</li>
+<li><strong>Buffer inventory.</strong> To absorb all that variability, someone carries extra WIP between steps. That inventory is cash sitting on a shelf.</li>
 </ul>
-<p>One manufacturer did exactly this — <a href="/case-studies/single-source-switch/">three vendors to one roof</a>, lead time cut ~50%, freight down 20–30%, all on one PO.</p>
+
+<h2>Single-source vs. multi-vendor, side by side</h2>
+<div class="post-tablewrap"><table class="post-table"><thead><tr><th>Dimension</th><th>Single-source (one roof)</th><th>Multi-vendor</th></tr></thead><tbody>
+<tr><td>Accountability</td><td>One team owns the finished part; no seam to hide behind</td><td>Split across suppliers; defects trigger finger-pointing</td></tr>
+<tr><td>Lead time</td><td>One schedule, one queue; steps flow in sequence</td><td>Stacked queues plus freight legs between each shop</td></tr>
+<tr><td>Tolerance control</td><td>Stack managed across the whole flow; deviations caught at the station</td><td>Each vendor holds its own tol; stack-up surfaces at final inspection</td></tr>
+<tr><td>Freight between steps</td><td>None — parts move across the floor, not across the map</td><td>A truck and a handling cycle at every transfer</td></tr>
+<tr><td>Quality traceability</td><td>One quality system and record end to end</td><td>Separate systems that don't reconcile cleanly</td></tr>
+<tr><td>Change management</td><td>One revision pushed once, to one team</td><td>Re-issued and re-synced to every vendor; easy to desync</td></tr>
+</tbody></table></div>
+
+<div class="post-callout"><p><span class="k">Bottom line</span><strong>Consolidating cut, form, weld, machine, and finish under one roof replaces a supply chain you have to manage with a single accountable partner who hands you a finished, inspected part.</strong></p></div>
+
+<h2>What we see on the floor</h2>
+<p>The programs that move to single-source usually don't arrive because someone ran a spreadsheet — they arrive frustrated. A launch date is slipping because formed parts are stuck at a coater two states away, or a recurring weld reject can't be root-caused because the cutter and the welder each insist it's the other's problem. When the whole flow runs in one building, those conversations get short: the person who cut the blank, the one who bent it, and the one who welded it are on the same floor, often on the same shift, looking at the same part.</p>
+<p>It also changes how design feedback works. Because <a href="/sheet-metal-fabrication/">sheet metal fabrication</a>, machining, and finishing share a roof with in-house engineering, a bend relief that fights the weld sequence or a feature that's a headache to fixture gets flagged early — while it's still cheap to change the print — instead of surfacing three vendors deep into the first build. That's the quiet advantage of one-roof work: the feedback loop is measured in steps across the floor, not weeks across a supply chain. For a fuller walkthrough of how the stages connect, our <a href="/resources/guides/custom-metal-fabrication/">custom metal fabrication guide</a> maps the whole flow.</p>
+<p class="post-note">Every part and program is different — send us your prints and we'll map the one-roof flow to your part.</p>
+
+<h2>When splitting vendors can still make sense</h2>
+<p>Single-source isn't the right answer for every part, and it's worth being honest about that. There are real cases where a multi-vendor approach is the correct call:</p>
+<ul>
+<li><strong>A specialty process the shop doesn't run.</strong> If your part needs a process outside a given shop's capability set — certain plating or anodize lines, specialized heat-treat, casting, or a niche coating spec — that step is going out regardless. The goal isn't to force everything under one roof; it's to consolidate the steps that <em>can</em> live together and manage the one genuine outside operation cleanly.</li>
+<li><strong>Geographic proximity.</strong> If a supplier sits next door to your assembly line and daily milk-run logistics dominate the cost equation, local can outweigh consolidation for that specific part.</li>
+<li><strong>Capacity overflow and dual-sourcing.</strong> High-volume programs sometimes need a second source for risk mitigation or to absorb peak demand. Even then, single-source as the primary keeps accountability clear, with the second vendor as a deliberate backup rather than a split-by-default.</li>
+</ul>
+<p>The point isn't that one roof always wins. It's that the default should flip: consolidate everything that reasonably can, and split only when there's a concrete reason — not because that's how the sourcing happened to grow.</p>
+
+<h2 class="post-faq">Frequently asked questions</h2>
+<h3>What is single-source metal fabrication?</h3>
+<p>Single-source metal fabrication means one shop takes your part from raw material to finished, inspected product — cutting, forming, welding, machining, and finishing all in the same facility. Instead of coordinating separate cutters, welders, and coaters, you issue one purchase order to one accountable team.</p>
+<h3>Does single-source actually reduce lead time?</h3>
+<p>Usually, yes. Most of the calendar time in a multi-vendor flow is queue time and freight between shops, not actual machine time. When the steps run in sequence in one building, you eliminate the transit legs and the stacked backlogs, so the part moves on a single schedule instead of waiting in line at three or four separate shops.</p>
+<h3>Is one shop really cheaper than shopping each step separately?</h3>
+<p>The per-step piece price at a specialist can look lower on paper, but it ignores freight between vendors, duplicate receiving and inspection, buffer inventory, and the engineering time lost to finger-pointing when defects cross vendor lines. Single-source usually wins on total delivered cost even when an individual line item isn't the cheapest quote.</p>
+<h3>How does single-source improve quality accountability?</h3>
+<p>With one team owning the whole part, there's no seam to hide behind. Tolerance stack-up is managed across the entire flow rather than at isolated vendors, deviations get caught at the station instead of at final inspection, and there's a single quality system and record for the finished part. Southern Perfection Fabrication runs an ISO 9001 quality system with in-house CMM inspection.</p>
+<h3>When should I still split fabrication across vendors?</h3>
+<p>Split when a part needs a specialty process the shop genuinely doesn't offer, when a supplier's proximity to your assembly line dominates the cost equation, or when a high-volume program needs a deliberate second source for capacity or risk. The sensible default is to consolidate everything that reasonably can live under one roof and split only for a concrete reason.</p>
     </div></section>
         <section class="section section-paper"><div class="wrap">
       <p class="kicker">Keep reading</p><h2>Related posts.</h2>
