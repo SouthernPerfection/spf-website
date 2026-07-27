@@ -310,7 +310,7 @@
 
   function init(){
     buildBand();
-    buildBlogCta();
+    // buildBlogCta();  // removed: footer newsletter is enough — was duplicating the signup on every blog post
     var rfqModal = buildRfqModal();
     document.addEventListener("click", function(e){
       if(!e.target.closest) return;
