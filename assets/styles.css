@@ -375,3 +375,7 @@ a.mega-top:hover, .mega-item:hover > .mega-top, .mega-item:focus-within > .mega-
 .roi-stat-num { font-weight: 700; font-size: 1.3rem; color: var(--ink); }
 .roi-stat-label { font-size: .76rem; color: var(--steel); margin-top: .1rem; }
 .roi-note { font-size: .76rem; color: var(--steel); margin: 1rem 0 0; }
+
+a.card{display:block;transition:border-color .15s, transform .08s;}
+a.card:hover{border-color:var(--spark);transform:translateY(-2px);text-decoration:none;}
+.card-go{display:inline-block;margin-top:.75rem;font-family:var(--font-mono);font-size:.78rem;color:var(--spark);letter-spacing:1px;}
