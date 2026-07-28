@@ -658,7 +658,7 @@ async function safeText(res) {
 // team the full application (reply-to the applicant) and (2) email the applicant
 // a branded confirmation. Reuses the same verified Resend sender as RFQs.
 const CAREERS_EMAIL = "careers@southernperfection.com";
-const CAREERS_NOTIFY = [CAREERS_EMAIL, "william.doxey@southernperfection.com"];
+const CAREERS_NOTIFY = [CAREERS_EMAIL, "frontdesk@southernperfection.com", "william.doxey@southernperfection.com"];
 
 async function handleApply(request, env) {
   let d;
