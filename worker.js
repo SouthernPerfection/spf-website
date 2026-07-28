@@ -79,6 +79,11 @@ export default {
       if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
       return handleRb2b(request, env, url.searchParams.get("token"));
     }
+    // Careers application — email the applicant a confirmation and the team the details (via Resend).
+    if (path === "/api/apply") {
+      if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
+      return handleApply(request, env);
+    }
     // Google Ads pulls this file on a schedule to import Closed-Won revenue as
     // offline conversions (RFQ click -> won deal). Secured by ?token=.
     if (path === "/api/gads-conversions") {
@@ -646,6 +651,78 @@ async function safeText(res) {
   } catch {
     return "";
   }
+}
+
+// ---- Careers application -------------------------------------------------
+// A candidate submits the apply form on a /careers/ job page. We (1) email the
+// team the full application (reply-to the applicant) and (2) email the applicant
+// a branded confirmation. Reuses the same verified Resend sender as RFQs.
+const CAREERS_EMAIL = "careers@southernperfection.com";
+const CAREERS_NOTIFY = [CAREERS_EMAIL, "william.doxey@southernperfection.com"];
+
+async function handleApply(request, env) {
+  let d;
+  try { d = await request.json(); } catch { d = null; }
+  if (!d || typeof d !== "object") return json({ ok: false, error: "bad_payload" }, 400);
+  const a = {
+    name: str(d.name).trim().slice(0, 120),
+    email: str(d.email).trim().toLowerCase().slice(0, 160),
+    phone: str(d.phone).trim().slice(0, 40),
+    role: str(d.role).trim().slice(0, 120) || "General application",
+    experience: str(d.experience).trim().slice(0, 120),
+    message: str(d.message).trim().slice(0, 4000),
+  };
+  const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a.email);
+  if (!a.name || !emailOk) return json({ ok: false, error: "missing_fields" }, 400);
+
+  const results = { notify: false, confirm: false };
+  if (env.RESEND_API_KEY) {
+    const notify = await sendEmail(env, {
+      to: CAREERS_NOTIFY,
+      replyTo: a.email,
+      subject: `New application — ${a.role} — ${a.name}`,
+      html: applyNotifyHtml(a),
+    }).catch(() => ({ ok: false }));
+    results.notify = notify.ok;
+    const confirm = await sendEmail(env, {
+      to: a.email,
+      replyTo: CAREERS_EMAIL,
+      subject: `We got your application — ${a.role} at Southern Perfection`,
+      html: applyConfirmHtml(a),
+    }).catch(() => ({ ok: false }));
+    results.confirm = confirm.ok;
+  }
+  return json({ ok: true, ...results });
+}
+
+function esc(s) {
+  return str(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function applyNotifyHtml(a) {
+  const row = (k, v) => v ? `<tr><td style="padding:6px 12px 6px 0;color:#6F7782;font-family:${FONT};font-size:13px;vertical-align:top;">${k}</td><td style="padding:6px 0;color:#16181C;font-family:${FONT};font-size:14px;">${esc(v)}</td></tr>` : "";
+  return `<div style="max-width:560px;margin:0 auto;padding:24px;font-family:${FONT};">
+    <div style="border-left:4px solid #DD4E14;padding:2px 0 2px 14px;margin-bottom:18px;">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#DD4E14;font-weight:bold;">New job application</div>
+      <div style="font-size:20px;font-weight:bold;color:#16181C;">${esc(a.role)}</div>
+    </div>
+    <table style="border-collapse:collapse;width:100%;">
+      ${row("Name", a.name)}${row("Email", a.email)}${row("Phone", a.phone)}${row("Experience", a.experience)}
+      ${a.message ? `<tr><td colspan="2" style="padding:12px 0 4px;color:#6F7782;font-family:${FONT};font-size:13px;">Message</td></tr><tr><td colspan="2" style="color:#16181C;font-family:${FONT};font-size:14px;line-height:1.6;white-space:pre-wrap;">${esc(a.message)}</td></tr>` : ""}
+    </table>
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid #eee;">
+      <a href="mailto:${esc(a.email)}" style="display:inline-block;background:#DD4E14;color:#fff;text-decoration:none;font-size:14px;font-weight:bold;padding:11px 20px;border-radius:6px;">Reply to ${esc(a.name)} &rarr;</a>
+    </div>
+  </div>`;
+}
+
+function applyConfirmHtml(a) {
+  return `<div style="max-width:560px;margin:0 auto;padding:24px;font-family:${FONT};">
+    <div style="font-size:20px;font-weight:bold;color:#16181C;margin-bottom:10px;">Thanks, ${esc(a.name.split(" ")[0])} — we got your application.</div>
+    <p style="color:#3c3f45;font-size:15px;line-height:1.6;">Thanks for your interest in the <strong>${esc(a.role)}</strong> role at Southern Perfection Fabrication. A member of our team will review it and reach out. If you have a resume or want to add anything, just reply to this email.</p>
+    <p style="color:#3c3f45;font-size:15px;line-height:1.6;">We've been building custom metal in Byron, Georgia since 1982 — and we're glad you're thinking about building your career with us.</p>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #eee;color:#6F7782;font-size:12px;line-height:1.8;">Southern Perfection Fabrication<br>232 Hwy 49 S &middot; Byron, GA 31008<br>478-956-4442 &middot; careers@southernperfection.com &middot; Est. 1982</div>
+  </div>`;
 }
 
 // ---- RB2B website-visitor webhook ---------------------------------------
