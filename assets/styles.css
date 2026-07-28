@@ -395,3 +395,6 @@ a.card:hover{border-color:var(--spark);transform:translateY(-2px);text-decoratio
 .apply-form .af-note { font-size: .85rem; color: var(--steel); font-weight: 400; margin: 0; }
 .apply-msg { margin-top: 1rem; font-weight: 600; font-size: 1.02rem; }
 .role-tiles .tile .tile-meta { color: var(--steel); font-size: .85rem; }
+
+/* center sections: center the h2 (which carries a max-width) and lede blocks, not just their text */
+.center h2, .center .lede, .center > p { margin-inline: auto; }
