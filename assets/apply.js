@@ -32,12 +32,12 @@
           show("Thanks, " + data.name.split(" ")[0] + "! We got your application and emailed a confirmation to " + data.email + ". We'll be in touch soon.", false);
           if (window.gtag) gtag("event", "generate_lead", { event_category: "Careers", event_label: data.role });
         } else {
-          show("Something went wrong sending that. Please email careers@southernperfection.com and we'll take it from there.", true);
+          show("Something went wrong sending that. Please email receptionist@southernperfection.com and we'll take it from there.", true);
           if (btn) { btn.disabled = false; btn.textContent = orig; }
         }
       })
       .catch(function () {
-        show("Something went wrong sending that. Please email careers@southernperfection.com and we'll take it from there.", true);
+        show("Something went wrong sending that. Please email receptionist@southernperfection.com and we'll take it from there.", true);
         if (btn) { btn.disabled = false; btn.textContent = orig; }
       });
   });

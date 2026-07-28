@@ -657,8 +657,10 @@ async function safeText(res) {
 // A candidate submits the apply form on a /careers/ job page. We (1) email the
 // team the full application (reply-to the applicant) and (2) email the applicant
 // a branded confirmation. Reuses the same verified Resend sender as RFQs.
-const CAREERS_EMAIL = "careers@southernperfection.com";
-const CAREERS_NOTIFY = [CAREERS_EMAIL, "receptionist@southernperfection.com", "william.doxey@southernperfection.com"];
+// NOTE: careers@ mailbox isn't set up yet — route everything to receptionist@ for now.
+// When careers@ is live, change this back to "careers@southernperfection.com".
+const CAREERS_EMAIL = "receptionist@southernperfection.com";
+const CAREERS_NOTIFY = [CAREERS_EMAIL, "william.doxey@southernperfection.com"];
 
 async function handleApply(request, env) {
   let d;
@@ -717,7 +719,7 @@ function applyConfirmHtml(a) {
     <div style="font-size:20px;font-weight:bold;color:#16181C;margin-bottom:10px;">Thanks, ${esc(a.name.split(" ")[0])} — we got your application.</div>
     <p style="color:#3c3f45;font-size:15px;line-height:1.6;">Thanks for your interest in the <strong>${esc(a.role)}</strong> role at Southern Perfection Fabrication. A member of our team will review it and reach out. If you have a resume or want to add anything, just reply to this email.</p>
     <p style="color:#3c3f45;font-size:15px;line-height:1.6;">We've been building custom metal in Byron, Georgia since 1982 — and we're glad you're thinking about building your career with us.</p>
-    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #eee;color:#6F7782;font-size:12px;line-height:1.8;">Southern Perfection Fabrication<br>232 Hwy 49 S &middot; Byron, GA 31008<br>478-956-4442 &middot; careers@southernperfection.com &middot; Est. 1982</div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #eee;color:#6F7782;font-size:12px;line-height:1.8;">Southern Perfection Fabrication<br>232 Hwy 49 S &middot; Byron, GA 31008<br>478-956-4442 &middot; ${CAREERS_EMAIL} &middot; Est. 1982</div>
   </div>`;
 }
 
