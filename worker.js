@@ -695,10 +695,6 @@ async function handleApply(request, env) {
   return json({ ok: true, ...results });
 }
 
-function esc(s) {
-  return str(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-}
-
 function applyNotifyHtml(a) {
   const row = (k, v) => v ? `<tr><td style="padding:6px 12px 6px 0;color:#6F7782;font-family:${FONT};font-size:13px;vertical-align:top;">${k}</td><td style="padding:6px 0;color:#16181C;font-family:${FONT};font-size:14px;">${esc(v)}</td></tr>` : "";
   return `<div style="max-width:560px;margin:0 auto;padding:24px;font-family:${FONT};">
