@@ -143,6 +143,13 @@ strong { font-weight: 700; }
 .card { border: 1px solid var(--line); border-radius: var(--radius); padding: 1.3rem; background: #fff; }
 .card h3 { color: var(--navy); font-family: var(--font-head); margin-bottom: .35rem; }
 .card p { margin: 0; font-size: .96rem; color: #333; }
+/* supplier snapshot fact grid (About) */
+.spec-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; margin-top: 1.6rem; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: #fff; }
+.spec-grid > div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: .72rem 1.1rem; border-bottom: 1px solid var(--line); }
+.spec-grid > div:nth-child(odd) { border-right: 1px solid var(--line); }
+.spec-grid dt { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--steel); margin: 0; white-space: nowrap; }
+.spec-grid dd { margin: 0; font-weight: 600; color: var(--ink); text-align: right; font-size: .92rem; }
+@media (max-width: 640px) { .spec-grid { grid-template-columns: 1fr; } .spec-grid > div:nth-child(odd) { border-right: none; } }
 
 /* ---------- Industry tiles ---------- */
 .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2rem; }
