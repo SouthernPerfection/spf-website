@@ -400,6 +400,34 @@ a.card:hover{border-color:var(--spark);transform:translateY(-2px);text-decoratio
 .apply-form input:focus, .apply-form textarea:focus { outline: 2px solid var(--spark); border-color: var(--spark); }
 .apply-form button { align-self: flex-start; }
 .apply-form .af-note { font-size: .85rem; color: var(--steel); font-weight: 400; margin: 0; }
+/* Careers screening form — chips, tape test, consents */
+.apply-form select { font: inherit; padding: .7rem .8rem; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); width: 100%; box-sizing: border-box; }
+.apply-form .af-step { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--spark); font-weight: 700; margin: 1rem 0 0; padding-top: 1rem; border-top: 1px solid var(--line); }
+.apply-form .af-step:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+.af-hint { color: var(--steel); font-weight: 400; font-size: .82em; }
+.af-yn { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; font-size: .9rem; font-weight: 600; color: var(--ink); }
+.af-seg, .af-opts { display: flex; gap: .5rem; flex-wrap: wrap; }
+.af-chip { position: relative; margin: 0; }
+.af-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.af-chip span { display: inline-block; padding: .5rem .95rem; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; font-weight: 600; font-size: .9rem; transition: background .12s, border-color .12s, color .12s; }
+.af-chip input:checked + span { background: var(--spark); color: #fff; border-color: var(--spark); }
+.af-chip input:focus-visible + span { outline: 2px solid var(--spark); outline-offset: 2px; }
+.af-lbl { font-size: .9rem; font-weight: 600; color: var(--ink); margin: .3rem 0 0; }
+.af-checks { display: flex; gap: .5rem; flex-wrap: wrap; }
+.af-checks label { flex-direction: row; align-items: center; gap: .5rem; border: 1px solid var(--line); border-radius: 8px; padding: .55rem .8rem; cursor: pointer; font-size: .88rem; }
+.af-checks input { width: auto; accent-color: var(--spark); }
+.af-tape { border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; margin: 0; background: var(--paper); }
+.af-ruler { overflow-x: auto; }
+.af-ruler svg { min-width: 300px; }
+.af-q { font-size: .95rem; font-weight: 700; color: var(--ink); margin: .8rem 0 .6rem; }
+.af-tape .af-opts label { flex: 1 1 40%; }
+.af-tape .af-opts .af-chip span { display: block; text-align: center; }
+.af-hist { border: 1px solid var(--line); border-radius: 8px; padding: .8rem 1rem; }
+.af-hist summary { cursor: pointer; font-weight: 600; color: var(--navy); font-size: .9rem; }
+.af-hist[open] summary { margin-bottom: .8rem; }
+.apply-form .af-consent { flex-direction: row; align-items: flex-start; gap: .6rem; font-weight: 400; font-size: .87rem; line-height: 1.5; color: #333; }
+.apply-form .af-consent input { width: auto; margin-top: .15rem; accent-color: var(--spark); flex: none; }
+.af-msg { font-size: .92rem; font-weight: 600; margin: 0; }
 .apply-msg { margin-top: 1rem; font-weight: 600; font-size: 1.02rem; }
 .role-tiles .tile .tile-meta { color: var(--steel); font-size: .85rem; }
 

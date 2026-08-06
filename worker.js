@@ -633,14 +633,16 @@ const LIFECYCLE = {
 };
 
 // ---- Resend --------------------------------------------------------------
-async function sendEmail(env, { to, replyTo, subject, html, from }) {
+async function sendEmail(env, { to, replyTo, subject, html, from, attachments }) {
+  const payload = { from: from || FROM, to: Array.isArray(to) ? to : [to], reply_to: replyTo, subject, html };
+  if (attachments && attachments.length) payload.attachments = attachments;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${env.RESEND_API_KEY}`,
     },
-    body: JSON.stringify({ from: from || FROM, to: Array.isArray(to) ? to : [to], reply_to: replyTo, subject, html }),
+    body: JSON.stringify(payload),
   });
   return { ok: res.ok, status: res.status, detail: res.ok ? "" : (await safeText(res)) };
 }
@@ -666,58 +668,93 @@ async function handleApply(request, env) {
   let d;
   try { d = await request.json(); } catch { d = null; }
   if (!d || typeof d !== "object") return json({ ok: false, error: "bad_payload" }, 400);
+  const arr = (x) => Array.isArray(x) ? x : [];
+  const t = d.tape && typeof d.tape === "object" ? d.tape : {};
+  const c = d.consents && typeof d.consents === "object" ? d.consents : {};
   const a = {
     name: str(d.name).trim().slice(0, 120),
     email: str(d.email).trim().toLowerCase().slice(0, 160),
     phone: str(d.phone).trim().slice(0, 40),
     role: str(d.role).trim().slice(0, 120) || "General application",
     experience: str(d.experience).trim().slice(0, 120),
+    age18: str(d.age18).slice(0, 8), workAuth: str(d.workAuth).slice(0, 8),
+    transport: str(d.transport).slice(0, 8), overtime: str(d.overtime).slice(0, 8),
+    drugScreen: str(d.drugScreen).slice(0, 8),
+    shifts: arr(d.shifts).map((s) => str(s).slice(0, 40)).slice(0, 5),
+    felony: str(d.felony).slice(0, 8), felonyDesc: str(d.felonyDesc).trim().slice(0, 600),
+    tapeScore: Number(t.score) || 0, tapeTotal: Number(t.total) || 0,
+    tapeAnswers: arr(t.answers).slice(0, 5).map((x) => ({ q: Number(x.q) || 0, given: str(x.given).slice(0, 16), correct: str(x.correct).slice(0, 16), ok: !!x.ok })),
+    history: arr(d.history).slice(0, 3).map((j) => ({ co: str(j.co).slice(0, 120), title: str(j.title).slice(0, 120), dates: str(j.dates).slice(0, 60), reason: str(j.reason).slice(0, 160) })).filter((j) => j.co || j.title),
     message: str(d.message).trim().slice(0, 4000),
+    consents: { certify: !!c.certify, atWill: !!c.atWill, drug: !!c.drug },
   };
   const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a.email);
   if (!a.name || !emailOk) return json({ ok: false, error: "missing_fields" }, 400);
+
+  // Optional client-built PDF -> attach to both emails (Resend base64 attachment).
+  let attachments;
+  const pdf = str(d.pdf);
+  if (pdf && pdf.length < 2000000) {
+    let fn = str(d.pdfName).replace(/[^A-Za-z0-9._-]/g, "").slice(0, 80) || "SPF-Application.pdf";
+    if (!fn.toLowerCase().endsWith(".pdf")) fn += ".pdf";
+    attachments = [{ filename: fn, content: pdf }];
+  }
+  const hasPdf = !!attachments;
 
   const results = { notify: false, confirm: false };
   if (env.RESEND_API_KEY) {
     const notify = await sendEmail(env, {
       to: CAREERS_NOTIFY,
       replyTo: a.email,
-      subject: `New application — ${a.role} — ${a.name}`,
-      html: applyNotifyHtml(a),
+      subject: `New application — ${a.role} — ${a.name} — tape ${a.tapeScore}/${a.tapeTotal}`,
+      html: applyNotifyHtml(a, hasPdf),
+      attachments,
     }).catch(() => ({ ok: false }));
     results.notify = notify.ok;
     const confirm = await sendEmail(env, {
       to: a.email,
       replyTo: CAREERS_EMAIL,
       subject: `We got your application — ${a.role} at Southern Perfection`,
-      html: applyConfirmHtml(a),
+      html: applyConfirmHtml(a, hasPdf),
+      attachments,
     }).catch(() => ({ ok: false }));
     results.confirm = confirm.ok;
   }
   return json({ ok: true, ...results });
 }
 
-function applyNotifyHtml(a) {
-  const row = (k, v) => v ? `<tr><td style="padding:6px 12px 6px 0;color:#6F7782;font-family:${FONT};font-size:13px;vertical-align:top;">${k}</td><td style="padding:6px 0;color:#16181C;font-family:${FONT};font-size:14px;">${esc(v)}</td></tr>` : "";
-  return `<div style="max-width:560px;margin:0 auto;padding:24px;font-family:${FONT};">
-    <div style="border-left:4px solid #DD4E14;padding:2px 0 2px 14px;margin-bottom:18px;">
+function applyNotifyHtml(a, hasPdf) {
+  const row = (k, v) => v ? `<tr><td style="padding:5px 12px 5px 0;color:#6F7782;font-family:${FONT};font-size:12px;vertical-align:top;white-space:nowrap;">${k}</td><td style="padding:5px 0;color:#16181C;font-family:${FONT};font-size:13px;">${esc(v)}</td></tr>` : "";
+  const pass = a.tapeTotal && a.tapeScore === a.tapeTotal;
+  const badge = pass ? "#0f7b6c" : (a.tapeScore >= 2 ? "#DD4E14" : "#b3261e");
+  const tapeLines = a.tapeAnswers.map((x) => `Q${x.q}: ${esc(x.given || "—")} ${x.ok ? "✓" : "✗ (ans " + esc(x.correct) + ")"}`).join(" &nbsp;·&nbsp; ");
+  const hist = a.history.map((j) => `<tr><td colspan="2" style="padding:3px 0;color:#16181C;font-family:${FONT};font-size:12px;">• <strong>${esc(j.co)}</strong> ${esc(j.title)} ${j.dates ? "(" + esc(j.dates) + ")" : ""} ${j.reason ? "— left: " + esc(j.reason) : ""}</td></tr>`).join("");
+  return `<div style="max-width:600px;margin:0 auto;padding:24px;font-family:${FONT};">
+    <div style="border-left:4px solid #DD4E14;padding:2px 0 2px 14px;margin-bottom:14px;">
       <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#DD4E14;font-weight:bold;">New job application</div>
       <div style="font-size:20px;font-weight:bold;color:#16181C;">${esc(a.role)}</div>
     </div>
+    <div style="display:inline-block;background:${badge};color:#fff;font-weight:bold;font-size:13px;padding:6px 12px;border-radius:6px;">Tape-measure: ${a.tapeScore}/${a.tapeTotal}${pass ? " — passed" : ""}</div>
+    <div style="color:#6F7782;font-size:11px;margin:6px 0 14px;">${tapeLines}</div>
     <table style="border-collapse:collapse;width:100%;">
       ${row("Name", a.name)}${row("Email", a.email)}${row("Phone", a.phone)}${row("Experience", a.experience)}
-      ${a.message ? `<tr><td colspan="2" style="padding:12px 0 4px;color:#6F7782;font-family:${FONT};font-size:13px;">Message</td></tr><tr><td colspan="2" style="color:#16181C;font-family:${FONT};font-size:14px;line-height:1.6;white-space:pre-wrap;">${esc(a.message)}</td></tr>` : ""}
+      ${row("Shifts", a.shifts.join(", "))}${row("18 or older", a.age18)}${row("Work-authorized", a.workAuth)}${row("Transportation", a.transport)}${row("Overtime", a.overtime)}${row("Drug screen OK", a.drugScreen)}${row("Felony", a.felony + (a.felonyDesc ? " — " + a.felonyDesc : ""))}
     </table>
-    <div style="margin-top:18px;padding-top:14px;border-top:1px solid #eee;">
+    ${hist ? `<div style="margin-top:12px;"><div style="color:#6F7782;font-size:12px;font-weight:bold;margin-bottom:2px;">Work history</div><table style="border-collapse:collapse;width:100%;">${hist}</table></div>` : ""}
+    ${a.message ? `<div style="margin-top:12px;color:#6F7782;font-size:12px;">Notes</div><div style="color:#16181C;font-size:13px;line-height:1.6;white-space:pre-wrap;">${esc(a.message)}</div>` : ""}
+    <div style="margin-top:10px;color:#6F7782;font-size:11px;">Acknowledged: ${a.consents.certify ? "✓ true &amp; complete " : ""}${a.consents.atWill ? "✓ at-will " : ""}${a.consents.drug ? "✓ drug-screen" : ""}</div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #eee;">
       <a href="mailto:${esc(a.email)}" style="display:inline-block;background:#DD4E14;color:#fff;text-decoration:none;font-size:14px;font-weight:bold;padding:11px 20px;border-radius:6px;">Reply to ${esc(a.name)} &rarr;</a>
+      ${hasPdf ? `<span style="color:#6F7782;font-size:12px;margin-left:10px;">Full application attached (PDF)</span>` : ""}
     </div>
   </div>`;
 }
 
-function applyConfirmHtml(a) {
+function applyConfirmHtml(a, hasPdf) {
   return `<div style="max-width:560px;margin:0 auto;padding:24px;font-family:${FONT};">
     <div style="font-size:20px;font-weight:bold;color:#16181C;margin-bottom:10px;">Thanks, ${esc(a.name.split(" ")[0])} — we got your application.</div>
-    <p style="color:#3c3f45;font-size:15px;line-height:1.6;">Thanks for your interest in the <strong>${esc(a.role)}</strong> role at Southern Perfection Fabrication. A member of our team will review it and reach out. If you have a resume or want to add anything, just reply to this email.</p>
+    <p style="color:#3c3f45;font-size:15px;line-height:1.6;">Thanks for your interest in the <strong>${esc(a.role)}</strong> role at Southern Perfection Fabrication. A member of our team will review it and reach out.${hasPdf ? " We've attached a copy of your application for your records." : ""} If you have a resume or want to add anything, just reply to this email.</p>
+    <p style="color:#3c3f45;font-size:15px;line-height:1.6;">And don't sweat the tape-measure questions — a lot of great people start without that skill. <strong>We train.</strong> If you show up ready to learn and work, we'll teach you the rest.</p>
     <p style="color:#3c3f45;font-size:15px;line-height:1.6;">We've been building custom metal in Byron, Georgia since 1982 — and we're glad you're thinking about building your career with us.</p>
     <div style="margin-top:16px;padding-top:14px;border-top:1px solid #eee;color:#6F7782;font-size:12px;line-height:1.8;">Southern Perfection Fabrication<br>232 Hwy 49 S &middot; Byron, GA 31008<br>478-956-4442 &middot; ${CAREERS_EMAIL} &middot; Est. 1982</div>
   </div>`;
