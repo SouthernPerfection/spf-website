@@ -93,74 +93,56 @@
     var lib;
     try { lib = await import("https://esm.sh/pdf-lib@1.17.1"); } catch (e) { return null; }
     try {
-      var SPARK = lib.rgb(0.867, 0.306, 0.078), INK = lib.rgb(0.086, 0.094, 0.11), STEEL = lib.rgb(0.435, 0.467, 0.51);
+      var rgb = lib.rgb;
+      var INK = rgb(0.086, 0.094, 0.11), SPARK = rgb(0.867, 0.306, 0.078), PAPER = rgb(0.957, 0.949, 0.925),
+          STEEL = rgb(0.435, 0.467, 0.51), WHITE = rgb(1, 1, 1), GREEN = rgb(0.05, 0.45, 0.38), RED = rgb(0.72, 0.16, 0.12), LT = rgb(0.78, 0.8, 0.83);
       var doc = await lib.PDFDocument.create();
       var font = await doc.embedFont(lib.StandardFonts.Helvetica);
       var bold = await doc.embedFont(lib.StandardFonts.HelveticaBold);
-      var page = doc.addPage([612, 792]);
-      var W = 612, M = 48, y = 792 - 44;
+      var W = 612, H = 792, M = 44, page = doc.addPage([W, H]);
+      var rt = function (t, x, y, s, ff, c) { page.drawText(t, { x: x - ff.widthOfTextAtSize(t, s), y: y, size: s, font: ff, color: c }); };
 
-      try {
-        var buf = await (await fetch("/assets/logo.png")).arrayBuffer();
-        var png = await doc.embedPng(buf), s = 34 / png.height;
-        page.drawImage(png, { x: M, y: y - 24, width: png.width * s, height: 34 });
-      } catch (e) {}
-      page.drawText("APPLICATION FOR EMPLOYMENT", { x: W - M - bold.widthOfTextAtSize("APPLICATION FOR EMPLOYMENT", 11), y: y - 6, size: 11, font: bold, color: INK });
-      page.drawText("Southern Perfection Fabrication Holdings, Inc.", { x: W - M - font.widthOfTextAtSize("Southern Perfection Fabrication Holdings, Inc.", 8), y: y - 18, size: 8, font: font, color: STEEL });
-      y -= 40;
-      page.drawRectangle({ x: M, y: y, width: W - 2 * M, height: 2.5, color: SPARK }); y -= 22;
+      // header band
+      page.drawRectangle({ x: 0, y: H - 96, width: W, height: 96, color: INK });
+      page.drawRectangle({ x: 0, y: H - 100, width: W, height: 4, color: SPARK });
+      try { var buf = await (await fetch("/assets/logo.png")).arrayBuffer(); var png = await doc.embedPng(buf), sc0 = 34 / png.height; page.drawImage(png, { x: M, y: H - 64, width: png.width * sc0, height: 34 }); } catch (e) {}
+      rt("APPLICATION FOR EMPLOYMENT", W - M, H - 46, 14, bold, WHITE);
+      rt("Southern Perfection Fabrication Holdings, Inc.", W - M, H - 60, 8.5, font, LT);
+      rt("Received " + new Date(d.submittedAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }), W - M, H - 74, 8.5, font, SPARK);
 
-      function sectionTitle(t) { page.drawText(t.toUpperCase(), { x: M, y: y, size: 9, font: bold, color: SPARK }); y -= 15; }
-      function wrap(t, fnt, sz, max) {
-        var words = String(t).split(/\s+/), lines = [], cur = "";
-        for (var i = 0; i < words.length; i++) {
-          var test = cur ? cur + " " + words[i] : words[i];
-          if (fnt.widthOfTextAtSize(test, sz) > max && cur) { lines.push(cur); cur = words[i]; } else cur = test;
-        }
-        if (cur) lines.push(cur); return lines.length ? lines : [""];
-      }
-      function row(k, v) {
-        if (v === "" || v == null) return;
-        page.drawText(k, { x: M, y: y, size: 9, font: bold, color: STEEL });
-        var lines = wrap(v, font, 10, W - 2 * M - 150);
-        for (var i = 0; i < lines.length; i++) { page.drawText(lines[i], { x: M + 150, y: y, size: 10, font: font, color: INK }); if (i < lines.length - 1) y -= 13; }
-        y -= 16;
-      }
+      // tape-measure score band
+      var sc = d.tape.score, tot = d.tape.total, SCORECOL = sc === tot ? GREEN : (sc >= 2 ? SPARK : RED);
+      var by = H - 124, bh = 60;
+      page.drawRectangle({ x: M, y: by - bh, width: W - 2 * M, height: bh, color: PAPER });
+      page.drawRectangle({ x: M, y: by - bh, width: 6, height: bh, color: SCORECOL });
+      page.drawText(sc + "/" + tot, { x: 64, y: by - 42, size: 30, font: bold, color: SCORECOL });
+      page.drawText("TAPE-MEASURE CHECK", { x: 150, y: by - 24, size: 11, font: bold, color: INK });
+      page.drawText("We train — this score is a guide, not a gate.", { x: 150, y: by - 42, size: 9.5, font: font, color: STEEL });
+      var mark = function (x, y, ok) {
+        if (ok) { page.drawLine({ start: { x: x, y: y + 2 }, end: { x: x + 3, y: y - 1 }, thickness: 1.6, color: WHITE }); page.drawLine({ start: { x: x + 3, y: y - 1 }, end: { x: x + 8, y: y + 6 }, thickness: 1.6, color: WHITE }); }
+        else { page.drawLine({ start: { x: x, y: y + 6 }, end: { x: x + 7, y: y - 1 }, thickness: 1.6, color: WHITE }); page.drawLine({ start: { x: x, y: y - 1 }, end: { x: x + 7, y: y + 6 }, thickness: 1.6, color: WHITE }); }
+      };
+      var pw = 52, gap = 8, px0 = W - M - (3 * pw + 2 * gap);
+      d.tape.answers.forEach(function (a, i) { var x = px0 + i * (pw + gap); page.drawRectangle({ x: x, y: by - 42, width: pw, height: 22, color: a.ok ? GREEN : RED }); page.drawText("Q" + (i + 1), { x: x + 9, y: by - 35, size: 10, font: bold, color: WHITE }); mark(x + 32, by - 32, a.ok); });
 
-      sectionTitle("Applicant");
-      row("Position applied for", d.role);
-      row("Name", d.name);
-      row("Email", d.email);
-      row("Phone", d.phone);
-      row("Relevant experience", d.experience);
-      y -= 4; sectionTitle("Availability & eligibility");
-      row("18 or older", d.age18);
-      row("U.S. work authorized", d.workAuth);
-      row("Reliable transportation", d.transport);
-      row("Open to overtime", d.overtime);
-      row("Consents to drug screen", d.drugScreen);
-      row("Shifts available", d.shifts.join(", "));
-      row("Felony conviction", d.felony + (d.felonyDesc ? " - " + d.felonyDesc : ""));
+      var y = by - bh - 30, rowi = 0;
+      var wrap = function (t, fn, sz, mx) { var ws = String(t).split(/\s+/), ls = [], c = ""; for (var i = 0; i < ws.length; i++) { var tt = c ? c + " " + ws[i] : ws[i]; if (fn.widthOfTextAtSize(tt, sz) > mx && c) { ls.push(c); c = ws[i]; } else c = tt; } if (c) ls.push(c); return ls.length ? ls : [""]; };
+      var section = function (t) { y -= 8; page.drawText(t.toUpperCase(), { x: M, y: y, size: 10, font: bold, color: SPARK }); page.drawRectangle({ x: M, y: y - 6, width: 34, height: 2.5, color: SPARK }); y -= 20; rowi = 0; };
+      var row = function (k, v) { if (v === "" || v == null) return; var lines = wrap(v, font, 10.5, W - 2 * M - 8 - 176); var rh = Math.max(21, lines.length * 14 + 7); if (rowi % 2 === 0) page.drawRectangle({ x: M, y: y - rh + 14, width: W - 2 * M, height: rh, color: PAPER }); page.drawText(k, { x: M + 10, y: y, size: 9, font: bold, color: STEEL }); lines.forEach(function (ln, i) { page.drawText(ln, { x: M + 176, y: y - i * 14, size: 10.5, font: font, color: INK }); }); y -= rh; rowi++; };
 
-      y -= 4; sectionTitle("Tape-measure check");
-      page.drawText(d.tape.score + " / " + d.tape.total + " correct", { x: M, y: y, size: 13, font: bold, color: d.tape.score === d.tape.total ? lib.rgb(0.06, 0.48, 0.42) : SPARK }); y -= 18;
-      d.tape.answers.forEach(function (a) {
-        row("Q" + a.q + " (answer " + a.correct + ")", (a.given || "-") + "  " + (a.ok ? "[correct]" : "[missed]"));
-      });
+      section("Applicant");
+      row("Position applied for", d.role); row("Name", d.name); row("Email", d.email); row("Phone", d.phone); row("Relevant experience", d.experience);
+      section("Availability & eligibility");
+      row("18 or older", d.age18); row("U.S. work authorized", d.workAuth); row("Reliable transportation", d.transport); row("Open to overtime", d.overtime); row("Consents to drug screen", d.drugScreen); row("Shifts available", d.shifts.join(", ")); row("Felony conviction", d.felony + (d.felonyDesc ? " — " + d.felonyDesc : ""));
+      if (d.history.length) { section("Work history"); d.history.forEach(function (j) { row(j.co || "Employer", [j.title, j.dates, j.reason ? "left: " + j.reason : ""].filter(Boolean).join("  ·  ")); }); }
+      if (d.message) { section("Notes"); var ls = wrap(d.message, font, 10.5, W - 2 * M - 20); if (rowi % 2 === 0) page.drawRectangle({ x: M, y: y - ls.length * 14 + 7, width: W - 2 * M, height: ls.length * 14 + 7, color: PAPER }); ls.forEach(function (l, i) { page.drawText(l, { x: M + 10, y: y - i * 14, size: 10.5, font: font, color: INK }); }); y -= ls.length * 14 + 10; }
+      section("Acknowledgments");
+      ["Certified information is true & complete", "Understands employment is at-will", "Consents to pre-employment drug screen"].forEach(function (t) { page.drawLine({ start: { x: M + 2, y: y + 1 }, end: { x: M + 5, y: y - 2 }, thickness: 1.6, color: GREEN }); page.drawLine({ start: { x: M + 5, y: y - 2 }, end: { x: M + 11, y: y + 6 }, thickness: 1.6, color: GREEN }); page.drawText(t, { x: M + 20, y: y, size: 10, font: font, color: INK }); y -= 17; });
 
-      if (d.history.length) {
-        y -= 4; sectionTitle("Work history");
-        d.history.forEach(function (j) { row(j.co || "Employer", [j.title, j.dates, j.reason ? "left: " + j.reason : ""].filter(Boolean).join(" | ")); });
-      }
-      if (d.message) { y -= 4; sectionTitle("Notes"); wrap(d.message, font, 10, W - 2 * M).forEach(function (l) { page.drawText(l, { x: M, y: y, size: 10, font: font, color: INK }); y -= 13; }); }
-
-      y -= 8; sectionTitle("Acknowledgments");
-      ["Certified information is true & complete", "Understands employment is at-will", "Consents to pre-employment drug screen"].forEach(function (t) {
-        page.drawText("[x] " + t, { x: M, y: y, size: 9, font: font, color: INK }); y -= 13;
-      });
-
-      var when = new Date(d.submittedAt).toLocaleString("en-US");
-      page.drawText("Submitted online " + when + "  |  232 Hwy 49 S, Byron, GA 31008  |  478-956-4442  |  Est. 1982", { x: M, y: 34, size: 7.5, font: font, color: STEEL });
+      // footer band
+      page.drawRectangle({ x: 0, y: 0, width: W, height: 30, color: INK });
+      var foot = "232 Hwy 49 S, Byron, GA 31008   ·   478-956-4442   ·   southernperfection.com   ·   Est. 1982";
+      page.drawText(foot, { x: (W - font.widthOfTextAtSize(foot, 8)) / 2, y: 11, size: 8, font: font, color: LT });
 
       return { pdf: await doc.saveAsBase64(), pdfName: "SPF-Application-" + lastName(d.name) + ".pdf" };
     } catch (e) { return null; }
